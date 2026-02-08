@@ -1,3 +1,4 @@
+# handlers/investment.py
 from aiogram import F, Router, Bot
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, ContentType
 from aiogram.fsm.context import FSMContext
@@ -87,41 +88,50 @@ def get_receipt_keyboard(language='fa'):
             one_time_keyboard=True
         )
 
-def calculate_profit_percentage(amount: float) -> float:
-    """محاسبه درصد سود بر اساس مبلغ"""
-    if amount < 1000:
+def calculate_annual_profit_percentage(amount: float) -> float:
+    """محاسبه درصد سود سالانه بر اساس مبلغ"""
+    if amount < 500:
         return 0
+    elif amount <= 5000:
+        return 50  # 50% سالانه
     elif amount <= 10000:
-        return 4
+        return 60  # 60% سالانه
     else:
-        return 5
+        return 70  # 70% سالانه
 
-def calculate_monthly_profit(amount: float) -> float:
-    """محاسبه سود ماهانه"""
-    percentage = calculate_profit_percentage(amount)
-    return (amount * percentage) / 100
+def calculate_monthly_profit_from_annual(amount: float, annual_percentage: float) -> float:
+    """محاسبه سود ماهانه از سود سالانه"""
+    # سود سالانه تقسیم بر 12 ماه
+    annual_profit = (amount * annual_percentage) / 100
+    monthly_profit = annual_profit / 12
+    return monthly_profit
+
+def calculate_monthly_profit_percentage(annual_percentage: float) -> float:
+    """محاسبه درصد سود ماهانه از درصد سالانه"""
+    # درصد سالانه تقسیم بر 12
+    return annual_percentage / 12
 
 def get_investment_texts(language):
     """متن‌های سرمایه‌گذاری بر اساس زبان"""
     texts = {
         'fa': {
-            'menu': "💰 **سیستم سرمایه‌گذاری**\n\n📊 **شرایط سرمایه‌گذاری:**\n• حداقل سرمایه: 1,000 دلار\n• سود ماهانه ۴٪: برای 1,000 تا 10,000 دلار\n• سود ماهانه ۵٪: برای 10,000 دلار به بالا\n\n📋 **مراحل:**\n1. انتخاب مبلغ سرمایه‌گذاری\n2. دریافت آدرس کیف پول برای واریز\n3. واریز مبلغ\n4. ارسال رسید تراکنش\n5. تایید توسط پشتیبانی\n6. شروع محاسبه سود\n\nلطفاً یک گزینه را انتخاب کنید:",
+            'menu': "💰 **سیستم سرمایه‌گذاری**\n\n📊 **شرایط سرمایه‌گذاری:**\n• حداقل سرمایه: ۵۰۰ دلار\n• سود سالانه با پرداخت ماهانه:\n   🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n   🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n   🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n📋 **مراحل:**\n1. انتخاب مبلغ سرمایه‌گذاری\n2. دریافت آدرس کیف پول برای واریز\n3. واریز مبلغ\n4. ارسال رسید تراکنش\n5. تایید توسط پشتیبانی\n6. شروع محاسبه سود\n\nلطفاً یک گزینه را انتخاب کنید:",
             'no_wallet': "⚠️ **لطفاً ابتدا آدرس کیف پول خود را ثبت کنید!**\n\nبرای سرمایه‌گذاری نیاز دارید آدرس کیف پول BEP20 خود را در پروفایل ثبت کنید.\n\n🔹 به پروفایل بروید\n🔹 روی 'ویرایش کیف پول' کلیک کنید\n🔹 آدرس کیف پول خود را وارد کنید\n\nسپس می‌توانید سرمایه‌گذاری کنید.",
-            'enter_amount': "💰 **سرمایه‌گذاری جدید**\n\nلطفاً مبلغ سرمایه‌گذاری خود را وارد کنید (به دلار):\n\n📊 **نرخ سود:**\n• ۴٪ ماهانه: برای 1,000 تا 10,000 دلار\n• ۵٪ ماهانه: برای 10,000 دلار به بالا\n\n💵 **حداقل مبلغ:** 1,000 دلار\n\nمثال: 1500 یا 12000",
-            'min_amount': "⚠️ مبلغ باید حداقل 1,000 دلار باشد. لطفاً مجدداً وارد کنید:",
-            'invalid_amount': "⚠️ لطفاً یک عدد معتبر وارد کنید (مثال: 1500):",
-            'details': "✅ **جزئیات سرمایه‌گذاری**\n\n💵 **مبلغ سرمایه‌گذاری:** ${amount:,.2f}\n📈 **نرخ سود ماهانه:** {profit_percentage}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n📅 **تاریخ شروع:** فردا\n⏳ **مدت زمان:** نامحدود\n\n⚠️ **توجه:**\n• پس از تایید پرداخت، سود ماهانه محاسبه می‌شود\n• سود هر ماه به کیف پول شما واریز می‌شود\n• امکان برداشت اصل سرمایه پس از ۳ ماه\n\nآیا مایل به ادامه هستید؟",
+            'enter_amount': "💰 **سرمایه‌گذاری جدید**\n\nلطفاً مبلغ سرمایه‌گذاری خود را وارد کنید (به دلار):\n\n📊 **نرخ سود سالانه (پرداخت ماهانه):**\n• 🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n• 🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n• 🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n💰 **محاسبه پرداخت ماهانه:**\n(سود سالانه تقسیم بر ۱۲ ماه)\n• 🟢 ~۴.۱۷٪ ماهانه\n• 🔵 ~۵٪ ماهانه\n• 🟣 ~۵.۸۳٪ ماهانه\n\n💵 **حداقل مبلغ:** ۵۰۰ دلار\n\nمثال: ۵۰۰ یا ۷۵۰۰ یا ۱۵۰۰۰",
+            'min_amount': "⚠️ مبلغ باید حداقل ۵۰۰ دلار باشد. لطفاً مجدداً وارد کنید:",
+            'invalid_amount': "⚠️ لطفاً یک عدد معتبر وارد کنید (مثال: ۵۰۰):",
+            'details': "✅ **جزئیات سرمایه‌گذاری**\n\n💵 **مبلغ سرمایه‌گذاری:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n📅 **تاریخ شروع:** فردا\n⏳ **مدت زمان:** نامحدود\n\n⚠️ **توجه:**\n• پس از تایید پرداخت، سود ماهانه محاسبه می‌شود\n• سود هر ماه به کیف پول شما واریز می‌شود\n• امکان برداشت اصل سرمایه پس از ۳ ماه\n\nآیا مایل به ادامه هستید؟",
             'confirm_yes': "✅ بله، ادامه می‌دهم",
             'confirm_no': "❌ خیر، انصراف",
-            'payment': "🎯 **مرحله پرداخت**\n\n💵 **مبلغ واریز:** ${amount:,.2f}\n📈 **نرخ سود:** {profit_percentage}% ماهانه\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n🔐 **آدرس کیف پول شرکت (BEP20):**\n`{company_wallet}`\n\n📋 **دستورات مهم:**\n1. فقط به آدرس بالا واریز کنید\n2. حتماً از شبکه BEP20 استفاده کنید\n3. پس از واریز، رسید تراکنش را ارسال کنید\n4. منتظر تایید پشتیبانی باشید\n\n⏰ **تایید پرداخت:** حداکثر ۲۴ ساعت\n📞 **پشتیبانی:** @YourSupportUsername\n\n✅ پس از واریز، روی دکمه '📤 ارسال رسید تراکنش' کلیک کنید.",
+            'payment': "🎯 **مرحله پرداخت**\n\n💵 **مبلغ واریز:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n🔐 **آدرس کیف پول شرکت (BEP20):**\n`{company_wallet}`\n\n📋 **دستورات مهم:**\n1. فقط به آدرس بالا واریز کنید\n2. حتماً از شبکه BEP20 استفاده کنید\n3. پس از واریز، رسید تراکنش را ارسال کنید\n4. منتظر تایید پشتیبانی باشید\n\n⏰ **تایید پرداخت:** حداکثر ۲۴ ساعت\n📞 **پشتیبانی:** @YourSupportUsername\n\n✅ پس از واریز، روی دکمه '📤 ارسال رسید تراکنش' کلیک کنید.",
             'receipt_request': "📤 **لطفاً رسید تراکنش خود را ارسال کنید**\n\nمی‌توانید:\n• هش تراکنش (Transaction Hash) را به صورت متن ارسال کنید\n• یا عکس/اسکرین‌شات رسید را ارسال کنید\n\nمثال هش تراکنش:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ اگر رسید ندارید، می‌توانید '⏭️ بدون رسید' را بزنید.",
             'receipt_received': "✅ **رسید تراکنش شما دریافت شد!**\n\n📋 در حال ثبت درخواست سرمایه‌گذاری شما...",
             'receipt_skip': "⏭️ **بدون رسید ادامه می‌دهم**\n\n📋 در حال ثبت درخواست سرمایه‌گذاری شما...",
             'cancel_invest': "❌ انصراف از سرمایه‌گذاری",
-            'investment_submitted': "✅ **درخواست سرمایه‌گذاری شما ثبت شد!**\n\n🎯 **شناسه درخواست:** #{investment_id}\n💵 **مبلغ:** ${amount:,.2f}\n📈 **نرخ سود:** {profit_percentage}% ماهانه\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n⏳ **وضعیت:** در انتظار تایید پرداخت\n📞 **پیگیری:** از طریق پشتیبانی\n⏰ **زمان تایید:** حداکثر ۲۴ ساعت\n\nپس از تایید پرداخت، سرمایه‌گذاری شما فعال می‌شود و سود ماهانه از فردا محاسبه می‌گردد.",
+            'investment_submitted': "✅ **درخواست سرمایه‌گذاری شما ثبت شد!**\n\n🎯 **شناسه درخواست:** #{investment_id}\n💵 **مبلغ:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n⏳ **وضعیت:** در انتظار تایید پرداخت\n📞 **پیگیری:** از طریق پشتیبانی\n⏰ **زمان تایید:** حداکثر ۲۴ ساعت\n\nپس از تایید پرداخت، سرمایه‌گذاری شما فعال می‌شود و سود ماهانه از فردا محاسبه می‌گردد.",
             'no_investments': "📭 **هیچ سرمایه‌گذاری ندارید.**",
             'investments_title': "📊 **سرمایه‌گذاری‌های شما**\n\n",
-            'investment_item': "💰 **سرمایه‌گذاری #{inv_id}**\n📦 **بسته:** {package}\n💵 **مبلغ:** ${amount:,.2f}\n📈 **سود ماهانه:** ${monthly_profit:,.2f}\n📊 **وضعیت:** {status_text}\n📅 **تاریخ شروع:** {start_date}\n",
+            'investment_item': "💰 **سرمایه‌گذاری #{inv_id}**\n📦 **بسته:** {package}\n💵 **مبلغ:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **سود ماهانه:** ${monthly_profit:,.2f}\n🎯 **وضعیت:** {status_text}\n📅 **تاریخ شروع:** {start_date}\n",
             'active_status': "✅ **در حال کسب سود**\n",
             'total_active': "📈 **مجموع سرمایه فعال:** ${total_active:,.2f}",
             'balance_title': "💰 **وضعیت مالی شما**\n\n",
@@ -132,23 +142,23 @@ def get_investment_texts(language):
             'invalid_receipt': "⚠️ لطفاً رسید تراکنش (هش) یا عکس رسید را ارسال کنید."
         },
         'ar': {
-            'menu': "💰 **نظام الاستثمار**\n\n📊 **شروط الاستثمار:**\n• الحد الأدنى للاستثمار: 1,000 دولار\n• ربح شهري ٤٪: للاستثمار من 1,000 إلى 10,000 دولار\n• ربح شهري ٥٪: للاستثمار فوق 10,000 دولار\n\n📋 **الخطوات:**\n1. اختيار مبلغ الاستثمار\n2. استلام عنوان المحفظة للإيداع\n3. إيداع المبلغ\n4. إرسال إيصال المعاملة\n5. التأكيد من الدعم الفني\n6. بدء حساب الربح\n\nالرجاء اختيار خيار:",
+            'menu': "💰 **نظام الاستثمار**\n\n📊 **شروط الاستثمار:**\n• الحد الأدنى للاستثمار: ٥٠٠ دولار\n• ربح سنوي مع دفع شهري:\n   🟢 ٥٠٪ سنوياً: للاستثمار من ٥٠٠ إلى ٥,٠٠٠ دولار\n   🔵 ٦٠٪ سنوياً: للاستثمار من ٥,٠٠٠ إلى ١٠,٠٠٠ دولار\n   🟣 ٧٠٪ سنوياً: للاستثمار فوق ١٠,٠٠٠ دولار\n\n📋 **الخطوات:**\n1. اختيار مبلغ الاستثمار\n2. استلام عنوان المحفظة للإيداع\n3. إيداع المبلغ\n4. إرسال إيصال المعاملة\n5. التأكيد من الدعم الفني\n6. بدء حساب الربح\n\nالرجاء اختيار خيار:",
             'no_wallet': "⚠️ **الرجاء تسجيل عنوان محفظتك أولاً!**\n\nللاستثمار تحتاج إلى تسجيل عنوان محفظتك BEP20 في الملف الشخصي.\n\n🔹 اذهب إلى الملف الشخصي\n🔹 انقر على 'تعديل المحفظة'\n🔹 أدخل عنوان محفتك\n\nثم يمكنك الاستثمار.",
-            'enter_amount': "💰 **استثمار جديد**\n\nالرجاء إدخال مبلغ استثمارك (بالدولار):\n\n📊 **معدل الربح:**\n• ٤٪ شهرياً: للاستثمار من 1,000 إلى 10,000 دولار\n• ٥٪ شهرياً: برای استثمار فوق 10,000 دولار\n\n💵 **الحد الأدنى:** 1,000 دولار\n\nمثال: 1500 أو 12000",
-            'min_amount': "⚠️ يجب أن يكون المبلغ 1,000 دولار على الأقل. الرجاء إعادة الإدخال:",
-            'invalid_amount': "⚠️ الرجاء إدخال رقم صحيح (مثال: 1500):",
-            'details': "✅ **تفاصيل الاستثمار**\n\n💵 **مبلغ الاستثمار:** ${amount:,.2f}\n📈 **معدل الربح الشهري:** {profit_percentage}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n📅 **تاريخ البدء:** غداً\n⏳ **المدة:** غير محدودة\n\n⚠️ **ملاحظة:**\n• بعد تأكيد الدفع، يبدأ حساب الربح الشهري\n• يتم إرسال الربح كل شهر إلى محفظتك\n• يمكن سحب رأس المال بعد 3 أشهر\n\nهل ترغب في المتابعة؟",
+            'enter_amount': "💰 **استثمار جديد**\n\nالرجاء إدخال مبلغ استثمارك (بالدولار):\n\n📊 **معدل الربح السنوي (دفع شهري):**\n• 🟢 ٥٠٪ سنوياً: للاستثمار من ٥٠٠ إلى ٥,٠٠٠ دولار\n• 🔵 ٦٠٪ سنوياً: للاستثمار من ٥,٠٠٠ إلى ١٠,٠٠٠ دولار\n• 🟣 ٧٠٪ سنوياً: للاستثمار فوق ١٠,٠٠٠ دولار\n\n💰 **حساب الدفع الشهري:**\n(الربح السنوي مقسوم على ١٢ شهر)\n• 🟢 ~٤.١٧٪ شهرياً\n• 🔵 ~٥٪ شهرياً\n• 🟣 ~٥.٨٣٪ شهرياً\n\n💵 **الحد الأدنى:** ٥٠٠ دولار\n\nمثال: ٥٠٠ أو ٧٥٠٠ أو ١٥٠٠٠",
+            'min_amount': "⚠️ يجب أن يكون المبلغ ٥٠٠ دولار على الأقل. الرجاء إعادة الإدخال:",
+            'invalid_amount': "⚠️ الرجاء إدخال رقم صحيح (مثال: ٥٠٠):",
+            'details': "✅ **تفاصيل الاستثمار**\n\n💵 **مبلغ الاستثمار:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n📅 **تاريخ البدء:** غداً\n⏳ **المدة:** غير محدودة\n\n⚠️ **ملاحظة:**\n• بعد تأكيد الدفع، يبدأ حساب الربح الشهري\n• يتم إرسال الربح كل شهر إلى محفظتك\n• يمكن سحب رأس المال بعد ۳ شهراً\n\nهل ترغب في المتابعة؟",
             'confirm_yes': "✅ نعم، أتابع",
             'confirm_no': "❌ لا، إلغاء",
-            'payment': "🎯 **مرحلة الدفع**\n\n💵 **مبلغ الإيداع:** ${amount:,.2f}\n📈 **معدل الربح:** {profit_percentage}% شهرياً\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n🔐 **عنوان محفظة الشركة (BEP20):**\n`{company_wallet}`\n\n📋 **تعليمات مهمة:**\n1. قم بالإيداع فقط إلى العنوان أعلاه\n2. استخدم شبكة BEP20 فقط\n3. بعد الدفع، أرسل إيصال المعاملة\n4. انتظر تأكيد الدعم الفني\n\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n📞 **الدعم:** @YourSupportUsername\n\n✅ بعد الدفع، انقر على زر '📤 إرسال إيصال المعاملة'.",
+            'payment': "🎯 **مرحلة الدفع**\n\n💵 **مبلغ الإيداع:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n🔐 **عنوان محفظة الشركة (BEP20):**\n`{company_wallet}`\n\n📋 **تعليمات مهمة:**\n1. قم بالإيداع فقط إلى العنوان أعلاه\n2. استخدم شبكة BEP20 فقط\n3. بعد الدفع، أرسل إيصال المعاملة\n4. انتظر تأكيد الدعم الفني\n\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n📞 **الدعم:** @YourSupportUsername\n\n✅ بعد الدفع، انقر على زر '📤 إرسال إيصال المعاملة'.",
             'receipt_request': "📤 **الرجاء إرسال إيصال المعاملة**\n\nيمكنك:\n• إرسال هاش المعاملة (Transaction Hash) كنص\n• أو إرسال صورة/لقطة شاشة للإيصال\n\nمثال لهاش المعاملة:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ إذا لم يكن لديك إيصال، يمكنك النقر على '⏭️ بدون إيصال'.",
             'receipt_received': "✅ **تم استلام إيصال معاملتك!**\n\n📋 جاري تسجيل طلب الاستثمار...",
             'receipt_skip': "⏭️ **سأستمر بدون إيصال**\n\n📋 جاري تسجيل طلب الاستثمار...",
             'cancel_invest': "❌ إلغاء الاستثمار",
-            'investment_submitted': "✅ **تم تقديم طلب الاستثمار!**\n\n🎯 **معرف الطلب:** #{investment_id}\n💵 **المبلغ:** ${amount:,.2f}\n📈 **معدل الربح:** {profit_percentage}% شهرياً\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n⏳ **الحالة:** في انتظار تأكيد الدفع\n📞 **المتابعة:** عبر الدعم الفني\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n\nبعد تأكيد الدفع، سيكون استثمارك نشطاً ويبدأ حساب الربح الشهري من الغد.",
+            'investment_submitted': "✅ **تم تقديم طلب الاستثمار!**\n\n🎯 **معرف الطلب:** #{investment_id}\n💵 **المبلغ:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n⏳ **الحالة:** في انتظار تأكيد الدفع\n📞 **المتابعة:** عبر الدعم الفني\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n\nبعد تأكيد الدفع، سيكون استثمارك نشطاً ويبدأ حساب الربح الشهري من الغد.",
             'no_investments': "📭 **ليس لديك أي استثمارات.**",
             'investments_title': "📊 **استثماراتك**\n\n",
-            'investment_item': "💰 **الاستثمار #{inv_id}**\n📦 **الباقة:** {package}\n💵 **المبلغ:** ${amount:,.2f}\n📈 **الربح الشهري:** ${monthly_profit:,.2f}\n📊 **الحالة:** {status_text}\n📅 **تاريخ البدء:** {start_date}\n",
+            'investment_item': "💰 **الاستثمار #{inv_id}**\n📦 **الباقة:** {package}\n💵 **المبلغ:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الربح الشهري:** ${monthly_profit:,.2f}\n🎯 **الحالة:** {status_text}\n📅 **تاريخ البدء:** {start_date}\n",
             'active_status': "✅ **في طور جني الربح**\n",
             'total_active': "📈 **إجمالي الاستثمار النشط:** ${total_active:,.2f}",
             'balance_title': "💰 **وضعك المالي**\n\n",
@@ -159,22 +169,23 @@ def get_investment_texts(language):
             'invalid_receipt': "⚠️ الرجاء إرسال إيصال المعاملة (الهاش) أو صورة الإيصال."
         },
         'en': {
-            'menu': "💰 **Investment System**\n\n📊 **Investment Conditions:**\n• Minimum: $1,000\n• 4% monthly: For $1,000 to $10,000\n• 5% monthly: For $10,000+\n\n📋 **Process:**\n1. Choose investment amount\n2. Get wallet address for deposit\n3. Make deposit\n4. Send transaction receipt\n5. Confirmation by support\n6. Start profit calculation\n\nPlease choose an option:",
+            'menu': "💰 **Investment System**\n\n📊 **Investment Conditions:**\n• Minimum: $500\n• Annual profit with monthly payout:\n   🟢 50% annually: For $500 to $5,000\n   🔵 60% annually: For $5,000 to $10,000\n   🟣 70% annually: For over $10,000\n\n📋 **Process:**\n1. Choose investment amount\n2. Get wallet address for deposit\n3. Make deposit\n4. Send transaction receipt\n5. Confirmation by support\n6. Start profit calculation\n\nPlease choose an option:",
             'no_wallet': "⚠️ **Please register your wallet address first!**\n\nTo invest, you need to register your BEP20 wallet address in your profile.\n\n🔹 Go to Profile\n🔹 Click 'Edit Wallet'\n🔹 Enter your wallet address\n\nThen you can invest.",
-            'enter_amount': "💰 **New Investment**\n\nPlease enter your investment amount (in USD):\n\n📊 **Profit Rates:**\n• 4% monthly: For $1,000 to $10,000\n• 5% monthly: For $10,000+\n\n💵 **Minimum amount:** $1,000\n\nExample: 1500 or 12000",
-            'min_amount': "⚠️ Amount must be at least $1,000. Please enter again:",
-            'invalid_amount': "⚠️ Please enter a valid number (example: 1500):",
-            'details': "✅ **Investment Details**\n\n💵 **Investment Amount:** ${amount:,.2f}\n📈 **Monthly Profit Rate:** {profit_percentage}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n📅 **Start Date:** Tomorrow\n⏳ **Duration:** Unlimited\n\n⚠️ **Important:**\n• After payment confirmation, monthly profit calculation starts\n• Profit sent to your wallet every month\n• Principal withdrawal possible after 3 months\n\nDo you want to continue?",
+            'enter_amount': "💰 **New Investment**\n\nPlease enter your investment amount (in USD):\n\n📊 **Annual Profit Rate (Monthly Payout):**\n• 🟢 50% annually: For $500 to $5,000\n• 🔵 60% annually: For $5,000 to $10,000\n• 🟣 70% annually: For over $10,000\n\n💰 **Monthly Payout Calculation:**\n(Annual rate divided by 3 months)\n• 🟢 ~4.17% monthly\n• 🔵 ~5% monthly\n• 🟣 ~5.83% monthly\n\n💵 **Minimum amount:** $500\n\nExample: 500 or 7500 or 15000",
+            'min_amount': "⚠️ Amount must be at least $500. Please enter again:",
+            'invalid_amount': "⚠️ Please enter a valid number (example: 500):",
+            'details': "✅ **Investment Details**\n\n💵 **Investment Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n📅 **Start Date:** Tomorrow\n⏳ **Duration:** Unlimited\n\n⚠️ **Important:**\n• After payment confirmation, monthly profit calculation starts\n• Profit sent to your wallet every month\n• Principal withdrawal possible after 12 months\n\nDo you want to continue?",
             'confirm_yes': "✅ Yes, Continue",
             'confirm_no': "❌ No, Cancel",
-            'payment': "🎯 **Payment Step**\n\n💵 **Deposit Amount:** ${amount:,.2f}\n📈 **Profit Rate:** {profit_percentage}% monthly\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n🔐 **Company Wallet Address (BEP20):**\n`{company_wallet}`\n\n📋 **Important Instructions:**\n1. Send only to the address above\n2. Use BEP20 network only\n3. After payment, send transaction receipt\n4. Wait for support confirmation\n\n⏰ **Confirmation Time:** Max 24 hours\n📞 **Support:** @YourSupportUsername\n\n✅ After payment, click the '📤 Send Transaction Receipt' button.",
-            'receipt_request': "📤 **Please send your transaction receipt**\n\nYou can:\n• Send Transaction Hash as text\n• Or send photo/screenshot of receipt\n\nTransaction Hash example:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ If you don't have receipt, you can click '⏭️ No Receipt'.",            'receipt_received': "✅ **Your transaction receipt has been received!**\n\n📋 Registering your investment request...",
+            'payment': "🎯 **Payment Step**\n\n💵 **Deposit Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n🔐 **Company Wallet Address (BEP20):**\n`{company_wallet}`\n\n📋 **Important Instructions:**\n1. Send only to the address above\n2. Use BEP20 network only\n3. After payment, send transaction receipt\n4. Wait for support confirmation\n\n⏰ **Confirmation Time:** Max 24 hours\n📞 **Support:** @YourSupportUsername\n\n✅ After payment, click the '📤 Send Transaction Receipt' button.",
+            'receipt_request': "📤 **Please send your transaction receipt**\n\nYou can:\n• Send Transaction Hash as text\n• Or send photo/screenshot of receipt\n\nTransaction Hash example:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ If you don't have receipt, you can click '⏭️ No Receipt'.",
+            'receipt_received': "✅ **Your transaction receipt has been received!**\n\n📋 Registering your investment request...",
             'receipt_skip': "⏭️ **I'll continue without receipt**\n\n📋 Registering your investment request...",
             'cancel_invest': "❌ Cancel Investment",
-            'investment_submitted': "✅ **Investment Request Submitted!**\n\n🎯 **Request ID:** #{investment_id}\n💵 **Amount:** ${amount:,.2f}\n📈 **Profit Rate:** {profit_percentage}% monthly\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n⏳ **Status:** Waiting for payment confirmation\n📞 **Follow up:** Through support\n⏰ **Confirmation Time:** Max 24 hours\n\nAfter payment confirmation, your investment will be active and monthly profit calculation starts tomorrow.",
+            'investment_submitted': "✅ **Investment Request Submitted!**\n\n🎯 **Request ID:** #{investment_id}\n💵 **Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n⏳ **Status:** Waiting for payment confirmation\n📞 **Follow up:** Through support\n⏰ **Confirmation Time:** Max 24 hours\n\nAfter payment confirmation, your investment will be active and monthly profit calculation starts tomorrow.",
             'no_investments': "📭 **You have no investments.**",
             'investments_title': "📊 **Your Investments**\n\n",
-            'investment_item': "💰 **Investment #{inv_id}**\n📦 **Package:** {package}\n💵 **Amount:** ${amount:,.2f}\n📈 **Monthly Profit:** ${monthly_profit:,.2f}\n📊 **Status:** {status_text}\n📅 **Start Date:** {start_date}\n",
+            'investment_item': "💰 **Investment #{inv_id}**\n📦 **Package:** {package}\n💵 **Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Profit:** ${monthly_profit:,.2f}\n🎯 **Status:** {status_text}\n📅 **Start Date:** {start_date}\n",
             'active_status': "✅ **Earning profit**\n",
             'total_active': "📈 **Total Active Investment:** ${total_active:,.2f}",
             'balance_title': "💰 **Your Financial Status**\n\n",
@@ -286,23 +297,26 @@ async def process_investment_amount(message: Message, state: FSMContext):
         amount = float(message.text.replace(',', ''))
         
         # بررسی حداقل مبلغ
-        if amount < 1000:
+        if amount < 500:
             await message.answer(texts['min_amount'])
             return
         
-        # محاسبه سود
-        profit_percentage = calculate_profit_percentage(amount)
-        monthly_profit = calculate_monthly_profit(amount)
+        # محاسبه سود سالانه
+        annual_percentage = calculate_annual_profit_percentage(amount)
+        monthly_profit = calculate_monthly_profit_from_annual(amount, annual_percentage)
+        monthly_percentage = calculate_monthly_profit_percentage(annual_percentage)
         
         await state.update_data(
             amount=amount, 
-            profit_percentage=profit_percentage, 
-            monthly_profit=monthly_profit
+            annual_percentage=annual_percentage, 
+            monthly_profit=monthly_profit,
+            monthly_percentage=monthly_percentage
         )
         
         confirmation_text = texts['details'].format(
             amount=amount,
-            profit_percentage=profit_percentage,
+            annual_percentage=annual_percentage,
+            monthly_percentage=monthly_percentage,
             monthly_profit=monthly_profit
         )
         
@@ -339,15 +353,17 @@ async def process_investment_confirmation(message: Message, state: FSMContext, b
     
     data = await state.get_data()
     amount = data.get('amount')
-    profit_percentage = data.get('profit_percentage')
+    annual_percentage = data.get('annual_percentage')
     monthly_profit = data.get('monthly_profit')
+    monthly_percentage = data.get('monthly_percentage')
     
     # آدرس کیف پول شرکت
     company_wallet = os.getenv("COMPANY_WALLET", "0x1234567890abcdef1234567890abcdef12345678")
     
     payment_instructions = texts['payment'].format(
         amount=amount,
-        profit_percentage=profit_percentage,
+        annual_percentage=annual_percentage,
+        monthly_percentage=monthly_percentage,
         monthly_profit=monthly_profit,
         company_wallet=company_wallet
     )
@@ -451,8 +467,9 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     # دریافت داده‌ها از state
     data = await state.get_data()
     amount = data.get('amount')
-    profit_percentage = data.get('profit_percentage')
+    annual_percentage = data.get('annual_percentage')
     monthly_profit = data.get('monthly_profit')
+    monthly_percentage = data.get('monthly_percentage')
     
     # دریافت اطلاعات کاربر
     user = db.get_user(user_id)
@@ -462,20 +479,21 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     # ذخیره سرمایه‌گذاری در دیتابیس (با رسید)
     cursor = db.conn.cursor()
     start_date = datetime.now()
-    end_date = start_date + timedelta(days=365*10)
+    end_date = start_date + timedelta(days=365*10)  # 10 سال
     
     cursor.execute('''
-        INSERT INTO investments (user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, transaction_receipt, receipt_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO investments (user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, annual_profit_percent, transaction_receipt, receipt_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         user_id,
-        f"{profit_percentage}% Monthly",
+        f"{annual_percentage}% Annual",
         amount,
         999,
         start_date.strftime('%Y-%m-%d %H:%M:%S'),
         end_date.strftime('%Y-%m-%d %H:%M:%S'),
         'pending',
-        profit_percentage,
+        monthly_percentage,  # درصد سود ماهانه
+        annual_percentage,   # درصد سود سالانه
         receipt_text,
         receipt_type
     ))
@@ -486,7 +504,7 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     # ارسال نوتیفیکیشن به ادمین‌ها (با رسید)
     await send_investment_notification_to_admins(
         bot, investment_id, user_name, user_id, amount, 
-        profit_percentage, monthly_profit, user_wallet,
+        annual_percentage, monthly_profit, monthly_percentage, user_wallet,
         receipt_text=receipt_text,
         receipt_type=receipt_type
     )
@@ -496,15 +514,16 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     investment_submitted_text = texts['investment_submitted'].format(
         investment_id=investment_id,
         amount=amount,
-        profit_percentage=profit_percentage,
+        annual_percentage=annual_percentage,
+        monthly_percentage=monthly_percentage,
         monthly_profit=monthly_profit
     )
     
     await message.answer(investment_submitted_text, reply_markup=get_investment_keyboard(language))
 
 async def send_investment_notification_to_admins(bot: Bot, investment_id: int, user_name: str, user_id: int, 
-                                                amount: float, profit_percentage: float, monthly_profit: float, 
-                                                user_wallet: str, receipt_text: str = "بدون رسید", 
+                                                amount: float, annual_percentage: float, monthly_profit: float, 
+                                                monthly_percentage: float, user_wallet: str, receipt_text: str = "بدون رسید", 
                                                 receipt_type: str = "none"):
     """ارسال نوتیفیکیشن سرمایه‌گذاری جدید به ادمین‌ها (با رسید)"""
     admin_ids_str = os.getenv("ADMIN_IDS", "")
@@ -557,7 +576,8 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"👤 *کاربر:* {user_name}\n"
                     f"🆔 *شناسه کاربر:* {user_id}\n"
                     f"💵 *مبلغ:* ${amount:,.2f}\n"
-                    f"📈 *نرخ سود:* {profit_percentage}%\n"
+                    f"📈 *نرخ سود سالانه:* {annual_percentage}%\n"
+                    f"📊 *نرخ سود ماهانه:* ~{monthly_percentage:.2f}%\n"
                     f"💰 *سود ماهانه:* ${monthly_profit:,.2f}\n"
                     f"🔐 *کیف پول کاربر:* {user_wallet[:10]}...\n\n"
                     f"📋 *رسید تراکنش:*\n"
@@ -590,7 +610,8 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"👤 *المستخدم:* {user_name}\n"
                     f"🆔 *معرف المستخدم:* {user_id}\n"
                     f"💵 *المبلغ:* ${amount:,.2f}\n"
-                    f"📈 *معدل الربح:* {profit_percentage}%\n"
+                    f"📈 *معدل الربح السنوي:* {annual_percentage}%\n"
+                    f"📊 *معدل الربح الشهري:* ~{monthly_percentage:.2f}%\n"
                     f"💰 *الربح الشهري:* ${monthly_profit:,.2f}\n"
                     f"🔐 *محفظة المستخدم:* {user_wallet[:10]}...\n\n"
                     f"📋 *إيصال المعاملة:*\n"
@@ -623,7 +644,8 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"👤 *User:* {user_name}\n"
                     f"🆔 *User ID:* {user_id}\n"
                     f"💵 *Amount:* ${amount:,.2f}\n"
-                    f"📈 *Profit Rate:* {profit_percentage}%\n"
+                    f"📈 *Annual Profit Rate:* {annual_percentage}%\n"
+                    f"📊 *Monthly Profit Rate:* ~{monthly_percentage:.2f}%\n"
                     f"💰 *Monthly Profit:* ${monthly_profit:,.2f}\n"
                     f"🔐 *User Wallet:* {user_wallet[:10]}...\n\n"
                     f"📋 *Transaction Receipt:*\n"
@@ -660,7 +682,8 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"🆔 شناسه: #{investment_id}\n"
                     f"👤 کاربر: {user_name}\n"
                     f"💵 مبلغ: ${amount:,.2f}\n"
-                    f"📈 سود: {profit_percentage}%\n"
+                    f"📈 سود سالانه: {annual_percentage}%\n"
+                    f"📊 سود ماهانه: ~{monthly_percentage:.2f}%\n"
                     f"🔐 کیف پول: {user_wallet[:10]}...\n\n"
                     f"📋 رسید: {receipt_type_simple}\n"
                     f"📎 محتوا: {receipt_text[:50]}...\n\n"
@@ -683,7 +706,7 @@ async def show_user_investments(message: Message):
     
     cursor = db.conn.cursor()
     cursor.execute('''
-        SELECT investment_id, package, amount, start_date, status, monthly_profit_percent
+        SELECT investment_id, package, amount, start_date, status, annual_profit_percent, monthly_profit_percent
         FROM investments 
         WHERE user_id = ?
         ORDER BY start_date DESC
@@ -722,18 +745,22 @@ async def show_user_investments(message: Message):
     
     response = texts['investments_title']
     for inv in investments:
-        inv_id, package, amount, start_date, status, profit_percent = inv
+        inv_id, package, amount, start_date, status, annual_percent, monthly_percent = inv
         
         # ترجمه وضعیت
         status_text = status_dict.get(status, status)
         
-        # محاسبه سود ماهانه
-        monthly_profit = (amount * profit_percent) / 100
+        # محاسبه سود ماهانه (استفاده از monthly_percent یا محاسبه از annual)
+        if monthly_percent:
+            monthly_profit = (amount * monthly_percent) / 100
+        else:
+            monthly_profit = (amount * (annual_percent / 12)) / 100
         
         investment_item = texts['investment_item'].format(
             inv_id=inv_id,
             package=package,
             amount=amount,
+            annual_percentage=annual_percent or "N/A",
             monthly_profit=monthly_profit,
             status_text=status_text,
             start_date=start_date[:10]
@@ -770,7 +797,11 @@ async def show_balance_profit(message: Message):
     total_investment = cursor.fetchone()[0] or 0
     
     # مجموع سود ماهانه
-    cursor.execute('SELECT SUM(amount * monthly_profit_percent / 100) FROM investments WHERE user_id = ? AND status = "active"', (user_id,))
+    cursor.execute('''
+        SELECT SUM(amount * COALESCE(monthly_profit_percent, annual_profit_percent / 12) / 100) 
+        FROM investments 
+        WHERE user_id = ? AND status = "active"
+    ''', (user_id,))
     total_monthly_profit = cursor.fetchone()[0] or 0
     
     # تعداد سرمایه‌گذاری‌های فعال
