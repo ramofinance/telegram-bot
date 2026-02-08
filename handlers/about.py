@@ -66,7 +66,7 @@ async def send_farsi_about(message: Message):
         
         "⚠️ **توجه:**\n"
         "• سود هر ماه به کیف پول BEP20 شما واریز می‌شود\n"
-        "• امکان برداشت اصل سرمایه پس از ۱۲ ماه\n"
+        "• امکان برداشت اصل سرمایه پس از ۳ ماه\n"
         "• پشتیبانی ۲۴ ساعته"
     )
     
@@ -118,7 +118,7 @@ async def send_english_about(message: Message):
         
         "⚠️ **Important:**\n"
         "• Profit sent monthly to your BEP20 wallet\n"
-        "• Principal withdrawal possible after 12 months\n"
+        "• Principal withdrawal possible after 3 months\n"
         "• 24/7 support available"
     )
     
@@ -170,7 +170,7 @@ async def send_arabic_about(message: Message):
         
         "⚠️ **ملاحظة:**\n"
         "• يتم إرسال الربح كل شهر إلى محفظتك BEP20\n"
-        "• يمكن سحب رأس المال بعد ١٢ شهراً\n"
+        "• يمكن سحب رأس المال بعد ۳ شهراً\n"
         "• دعم فني على مدار 24 ساعة"
     )
     
