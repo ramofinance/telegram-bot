@@ -849,7 +849,7 @@ dp.message.register(edit_phone_finish, ProfileStates.waiting_for_new_phone)
 dp.message.register(edit_wallet_finish, ProfileStates.waiting_for_new_wallet)
 
 async def main():
-    print(f"🤖 Bot is starting with proxy: {PROXY_URL}")
+#    print(f"🤖 Bot is starting with proxy: {PROXY_URL}")
     print(f"🤖 Send /reset to clear your data for testing")
     print(f"🤖 Send /myid to get your user ID")
     print(f"🤖 Send /dbinfo to check database structure")
