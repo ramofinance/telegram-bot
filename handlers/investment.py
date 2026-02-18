@@ -14,6 +14,7 @@ db = Database()
 class InvestmentStates(StatesGroup):
     waiting_for_amount = State()
     waiting_for_confirmation = State()
+    waiting_for_terms_agreement = State()  # مرحله جدید - قوانین
     waiting_for_wallet_payment = State()
     waiting_for_transaction_receipt = State()
 
@@ -115,7 +116,7 @@ def get_investment_texts(language):
     """متن‌های سرمایه‌گذاری بر اساس زبان"""
     texts = {
         'fa': {
-            'menu': "💰 **سیستم سرمایه‌گذاری**\n\n📊 **شرایط سرمایه‌گذاری:**\n• حداقل سرمایه: ۵۰۰ دلار\n• سود سالانه با پرداخت ماهانه:\n   🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n   🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n   🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n📋 **مراحل:**\n1. انتخاب مبلغ سرمایه‌گذاری\n2. دریافت آدرس کیف پول برای واریز\n3. واریز مبلغ\n4. ارسال رسید تراکنش\n5. تایید توسط پشتیبانی\n6. شروع محاسبه سود\n\nلطفاً یک گزینه را انتخاب کنید:",
+            'menu': "💰 **سیستم سرمایه‌گذاری**\n\n📊 **شرایط سرمایه‌گذاری:**\n• حداقل سرمایه: ۵۰۰ دلار\n• سود سالانه با پرداخت ماهانه:\n   🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n   🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n   🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n📋 **مراحل:**\n1. انتخاب مبلغ سرمایه‌گذاری\n2. مطالعه و پذیرش قوانین\n3. دریافت آدرس کیف پول برای واریز\n4. واریز مبلغ\n5. ارسال رسید تراکنش\n6. تایید توسط پشتیبانی\n7. شروع محاسبه سود\n\nلطفاً یک گزینه را انتخاب کنید:",
             'no_wallet': "⚠️ **لطفاً ابتدا آدرس کیف پول خود را ثبت کنید!**\n\nبرای سرمایه‌گذاری نیاز دارید آدرس کیف پول BEP20 خود را در پروفایل ثبت کنید.\n\n🔹 به پروفایل بروید\n🔹 روی 'ویرایش کیف پول' کلیک کنید\n🔹 آدرس کیف پول خود را وارد کنید\n\nسپس می‌توانید سرمایه‌گذاری کنید.",
             'enter_amount': "💰 **سرمایه‌گذاری جدید**\n\nلطفاً مبلغ سرمایه‌گذاری خود را وارد کنید (به دلار):\n\n📊 **نرخ سود سالانه (پرداخت ماهانه):**\n• 🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n• 🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n• 🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n💰 **محاسبه پرداخت ماهانه:**\n(سود سالانه تقسیم بر ۱۲ ماه)\n• 🟢 ~۴.۱۷٪ ماهانه\n• 🔵 ~۵٪ ماهانه\n• 🟣 ~۵.۸۳٪ ماهانه\n\n💵 **حداقل مبلغ:** ۵۰۰ دلار\n\nمثال: ۵۰۰ یا ۷۵۰۰ یا ۱۵۰۰۰",
             'min_amount': "⚠️ مبلغ باید حداقل ۵۰۰ دلار باشد. لطفاً مجدداً وارد کنید:",
@@ -123,6 +124,66 @@ def get_investment_texts(language):
             'details': "✅ **جزئیات سرمایه‌گذاری**\n\n💵 **مبلغ سرمایه‌گذاری:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n📅 **تاریخ شروع:** فردا\n⏳ **مدت زمان:** نامحدود\n\n⚠️ **توجه:**\n• پس از تایید پرداخت، سود ماهانه محاسبه می‌شود\n• سود هر ماه به کیف پول شما واریز می‌شود\n• امکان برداشت اصل سرمایه پس از ۳ ماه\n\nآیا مایل به ادامه هستید؟",
             'confirm_yes': "✅ بله، ادامه می‌دهم",
             'confirm_no': "❌ خیر، انصراف",
+            
+            # متن قوانین و مقررات فارسی
+            'terms_and_conditions': (
+                "📜 **قوانین و مقررات سرمایه‌گذاری RAMO FINANCE**\n\n"
+                "**ماده ۱ – ماهیت همکاری**\n"
+                "• این همکاری به صورت مدیریت سرمایه در بازارهای مالی بین‌المللی انجام می‌شود.\n"
+                "• بازارهای مالی ذاتاً دارای ریسک بوده و امکان سود و زیان وجود دارد.\n"
+                "• سرمایه‌گذار با علم و آگاهی کامل از ریسک‌های موجود، سرمایه خود را در اختیار تریدر قرار می‌دهد.\n"
+                "• هیچ‌گونه سود تضمین‌شده‌ای وجود ندارد.\n\n"
+                
+                "**ماده ۲ – نحوه انجام معاملات**\n"
+                "• تریدر متعهد است معاملات را با رعایت اصول حرفه‌ای مدیریت سرمایه انجام دهد.\n"
+                "• تریدر مجاز است از روش‌های مختلف معاملاتی از جمله اسپات، مارجین، فیوچرز و سایر ابزارهای مالی استفاده نماید.\n"
+                "• انجام معاملات می‌تواند از طریق پلتفرم‌های داخلی یا خارجی صورت گیرد.\n"
+                "• در صورت بروز شرایط خاص یا نوسانات شدید بازار، اطلاع‌رسانی انجام خواهد شد.\n"
+                "• سرمایه‌گذار آگاه است که تریدر دارای مجوز رسمی مدیریت سرمایه از نهادهای مالی بین‌المللی نمی‌باشد.\n\n"
+                
+                "**ماده ۳ – تقسیم سود و زیان**\n"
+                "• سود و زیان حاصل از معاملات بر اساس درصد توافق‌شده بین طرفین تقسیم می‌شود.\n"
+                "• پرداخت سود به صورت ماهانه و از طریق شبکه BEP20 به کیف پول اعلامی سرمایه‌گذار انجام می‌گردد.\n"
+                "• در صورت بروز زیان، گزارش عملکرد ارائه خواهد شد.\n"
+                "• حد ضرر کلی سرمایه ۲۰٪ تعیین می‌شود و در صورت رسیدن به این سطح، فعالیت معاملاتی متوقف می‌گردد.\n\n"
+                
+                "**ماده ۴ – تعهدات تریدر**\n"
+                "• حفظ محرمانگی اطلاعات سرمایه‌گذار\n"
+                "• مدیریت حرفه‌ای سرمایه\n"
+                "• ارائه گزارش در شرایط خاص\n"
+                "• خودداری از هرگونه اقدام مغایر با منافع سرمایه‌گذار\n\n"
+                
+                "**ماده ۵ – تعهدات سرمایه‌گذار**\n"
+                "• واریز سرمایه در زمان مقرر\n"
+                "• عدم مداخله در فرآیند اجرایی معاملات\n"
+                "• پذیرش کامل ریسک بازار\n"
+                "• عدم طرح ادعا در صورت زیان، مگر در صورت اثبات تخلف یا تقصیر تریدر\n\n"
+                
+                "**تبصره مهم:**\n"
+                "سرمایه‌گذار تأیید می‌کند که هیچ‌گونه تضمین سود از سوی تریدر دریافت نکرده و تمامی تصمیمات سرمایه‌گذاری با آگاهی کامل از ریسک بازار اتخاذ شده است.\n\n"
+                
+                "**ماده ۶ – فسخ همکاری**\n"
+                "• هر یک از طرفین در صورت نقض تعهدات می‌تواند با اعلام کتبی و پس از ۳۰ روز همکاری را خاتمه دهد.\n"
+                "• در صورت فسخ، اصل سرمایه و سود محقق‌شده تا تاریخ فسخ تسویه می‌شود.\n\n"
+                
+                "**ماده ۷ – فورس ماژور**\n"
+                "• در صورت وقوع شرایط خارج از کنترل طرفین (جنگ، قطعی اینترنت، تحریم، اختلال زیرساختی و...) مسئولیتی متوجه طرفین نخواهد بود.\n\n"
+                
+                "**ماده ۸ – تغییر اطلاعات تماس**\n"
+                "• هرگونه تغییر در اطلاعات تماس باید به اطلاع طرف مقابل برسد.\n\n"
+                
+                "📚 **مطالعه کامل قوانین:**\n"
+                "🔗 برای مطالعه کامل قوانین و مقررات به زبان فارسی، به لینک زیر مراجعه کنید:\n"
+                "🌐 https://github.com/ramofinance/terms-and-conditions/blob/main/fa.md\n\n"
+                
+                "✅ با کلیک بر روی 'قوانین را مطالعه کردم و قبول دارم'، تأیید می‌کنید که:\n"
+                "• قوانین بالا را مطالعه کرده‌اید\n"
+                "• با تمام شرایط موافق هستید\n"
+                "• مسئولیت سرمایه‌گذاری را می‌پذیرید"
+            ),
+            'agree_terms': "✅ قوانین را مطالعه کردم و قبول دارم",
+            'disagree_terms': "❌ انصراف از سرمایه‌گذاری",
+            
             'payment': "🎯 **مرحله پرداخت**\n\n💵 **مبلغ واریز:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n🔐 **آدرس کیف پول شرکت (BEP20):**\n`{company_wallet}`\n\n📋 **دستورات مهم:**\n1. فقط به آدرس بالا واریز کنید\n2. حتماً از شبکه BEP20 استفاده کنید\n3. پس از واریز، رسید تراکنش را ارسال کنید\n4. منتظر تایید پشتیبانی باشید\n\n⏰ **تایید پرداخت:** حداکثر ۲۴ ساعت\n📞 **پشتیبانی:** @YourSupportUsername\n\n✅ پس از واریز، روی دکمه '📤 ارسال رسید تراکنش' کلیک کنید.",
             'receipt_request': "📤 **لطفاً رسید تراکنش خود را ارسال کنید**\n\nمی‌توانید:\n• هش تراکنش (Transaction Hash) را به صورت متن ارسال کنید\n• یا عکس/اسکرین‌شات رسید را ارسال کنید\n\nمثال هش تراکنش:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ اگر رسید ندارید، می‌توانید '⏭️ بدون رسید' را بزنید.",
             'receipt_received': "✅ **رسید تراکنش شما دریافت شد!**\n\n📋 در حال ثبت درخواست سرمایه‌گذاری شما...",
@@ -142,7 +203,7 @@ def get_investment_texts(language):
             'invalid_receipt': "⚠️ لطفاً رسید تراکنش (هش) یا عکس رسید را ارسال کنید."
         },
         'ar': {
-            'menu': "💰 **نظام الاستثمار**\n\n📊 **شروط الاستثمار:**\n• الحد الأدنى للاستثمار: ٥٠٠ دولار\n• ربح سنوي مع دفع شهري:\n   🟢 ٥٠٪ سنوياً: للاستثمار من ٥٠٠ إلى ٥,٠٠٠ دولار\n   🔵 ٦٠٪ سنوياً: للاستثمار من ٥,٠٠٠ إلى ١٠,٠٠٠ دولار\n   🟣 ٧٠٪ سنوياً: للاستثمار فوق ١٠,٠٠٠ دولار\n\n📋 **الخطوات:**\n1. اختيار مبلغ الاستثمار\n2. استلام عنوان المحفظة للإيداع\n3. إيداع المبلغ\n4. إرسال إيصال المعاملة\n5. التأكيد من الدعم الفني\n6. بدء حساب الربح\n\nالرجاء اختيار خيار:",
+            'menu': "💰 **نظام الاستثمار**\n\n📊 **شروط الاستثمار:**\n• الحد الأدنى للاستثمار: ٥٠٠ دولار\n• ربح سنوي مع دفع شهري:\n   🟢 ٥٠٪ سنوياً: للاستثمار من ٥٠٠ إلى ٥,٠٠٠ دولار\n   🔵 ٦٠٪ سنوياً: للاستثمار من ٥,٠٠٠ إلى ١٠,٠٠٠ دولار\n   🟣 ٧٠٪ سنوياً: للاستثمار فوق ١٠,٠٠٠ دولار\n\n📋 **الخطوات:**\n1. اختيار مبلغ الاستثمار\n2. دراسة وقبول الشروط\n3. استلام عنوان المحفظة للإيداع\n4. إيداع المبلغ\n5. إرسال إيصال المعاملة\n6. التأكيد من الدعم الفني\n7. بدء حساب الربح\n\nالرجاء اختيار خيار:",
             'no_wallet': "⚠️ **الرجاء تسجيل عنوان محفظتك أولاً!**\n\nللاستثمار تحتاج إلى تسجيل عنوان محفظتك BEP20 في الملف الشخصي.\n\n🔹 اذهب إلى الملف الشخصي\n🔹 انقر على 'تعديل المحفظة'\n🔹 أدخل عنوان محفتك\n\nثم يمكنك الاستثمار.",
             'enter_amount': "💰 **استثمار جديد**\n\nالرجاء إدخال مبلغ استثمارك (بالدولار):\n\n📊 **معدل الربح السنوي (دفع شهري):**\n• 🟢 ٥٠٪ سنوياً: للاستثمار من ٥٠٠ إلى ٥,٠٠٠ دولار\n• 🔵 ٦٠٪ سنوياً: للاستثمار من ٥,٠٠٠ إلى ١٠,٠٠٠ دولار\n• 🟣 ٧٠٪ سنوياً: للاستثمار فوق ١٠,٠٠٠ دولار\n\n💰 **حساب الدفع الشهري:**\n(الربح السنوي مقسوم على ١٢ شهر)\n• 🟢 ~٤.١٧٪ شهرياً\n• 🔵 ~٥٪ شهرياً\n• 🟣 ~٥.٨٣٪ شهرياً\n\n💵 **الحد الأدنى:** ٥٠٠ دولار\n\nمثال: ٥٠٠ أو ٧٥٠٠ أو ١٥٠٠٠",
             'min_amount': "⚠️ يجب أن يكون المبلغ ٥٠٠ دولار على الأقل. الرجاء إعادة الإدخال:",
@@ -150,6 +211,66 @@ def get_investment_texts(language):
             'details': "✅ **تفاصيل الاستثمار**\n\n💵 **مبلغ الاستثمار:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n📅 **تاريخ البدء:** غداً\n⏳ **المدة:** غير محدودة\n\n⚠️ **ملاحظة:**\n• بعد تأكيد الدفع، يبدأ حساب الربح الشهري\n• يتم إرسال الربح كل شهر إلى محفظتك\n• يمكن سحب رأس المال بعد ۳ شهراً\n\nهل ترغب في المتابعة؟",
             'confirm_yes': "✅ نعم، أتابع",
             'confirm_no': "❌ لا، إلغاء",
+            
+            # Arabic terms and conditions
+            'terms_and_conditions': (
+                "📜 **شروط وأحكام الاستثمار RAMO FINANCE**\n\n"
+                "**المادة ۱ – طبيعة التعاون**\n"
+                "• يتم هذا التعاون على أساس إدارة رأس المال في الأسواق المالية الدولية.\n"
+                "• الأسواق المالية تنطوي بطبيعتها على مخاطر، ومن الممكن تحقيق الربح أو الخسارة.\n"
+                "• يقدم المستثمر رأس المال مع إدراك كامل لمخاطر السوق.\n"
+                "• لا يوجد ربح مضمون.\n\n"
+                
+                "**المادة ۲ – عمليات التداول**\n"
+                "• يلتزم المتداول بإجراء الصفقات بشكل احترافي ومسؤول.\n"
+                "• يجوز للمتداول استخدام طرق تداول مختلفة بما في ذلك التداول الفوري، والرافعة المالية، والعقود الآجلة، والأدوات المالية الأخرى.\n"
+                "• قد يتم التداول عبر منصات محلية أو دولية.\n"
+                "• سيتم إبلاغ المستثمر في حالة الأحداث السوقية الهامة.\n"
+                "• يقر المستثمر بأن المتداول لا يحمل ترخيصًا رسميًا لإدارة الأصول المالية.\n\n"
+                
+                "**المادة ۳ – توزيع الأرباح والخسائر**\n"
+                "• يتم توزيع الأرباح والخسائر بناءً على النسبة المتفق عليها.\n"
+                "• يتم توزيع الأرباح شهريًا عبر شبكة BEP20 إلى المحفظة التي يحددها المستثمر.\n"
+                "• في حالة الخسارة، سيتم تقديم تقرير أداء.\n"
+                "• تم تحديد حد أقصى للخسارة بنسبة ۲۰٪ من إجمالي رأس المال. سيتم إيقاف نشاط التداول في حالة الوصول إلى هذا الحد.\n\n"
+                
+                "**المادة ۴ – التزامات المتداول**\n"
+                "• الحفاظ على سرية معلومات المستثمر\n"
+                "• إدارة رأس المال بشكل احترافي\n"
+                "• تقديم تقارير شفافة\n"
+                "• التصرف بحسن نية تجاه مصلحة المستثمر\n\n"
+                
+                "**المادة ۵ – التزامات المستثمر**\n"
+                "• تحويل رأس المال في الوقت المحدد\n"
+                "• عدم التدخل في تنفيذ الصفقات\n"
+                "• قبول مخاطر السوق\n"
+                "• عدم تقديم مطالبات في حالة الخسارة إلا في حالة إثبات سوء السلوك أو الإهمال\n\n"
+                
+                "**شرط مهم:**\n"
+                "يؤكد المستثمر أنه لم يتم وعده بأي ربح مضمون من قبل المتداول، وأن جميع قرارات الاستثمار اتخذت مع الفهم الكامل لمخاطر السوق.\n\n"
+                
+                "**المادة ۶ – إنهاء التعاون**\n"
+                "• يجوز لأي من الطرفين إنهاء التعاون بإخطار كتابي مدته ۳۰ يومًا في حالة الإخلال بالالتزامات.\n"
+                "• عند الإنهاء، يتم تسوية رأس المال والأرباح المحققة حتى تاريخ الإنهاء.\n\n"
+                
+                "**المادة ۷ – القوة القاهرة**\n"
+                "• لا يتحمل أي من الطرفين المسؤولية عن عدم الوفاء بالالتزامات بسبب أحداث خارجة عن إرادتهما (الحرب، انقطاع الإنترنت، العقوبات، فشل البنية التحتية، إلخ).\n\n"
+                
+                "**المادة ۸ – تغيير معلومات الاتصال**\n"
+                "• يجب إبلاغ الطرف الآخر بأي تغيير في بيانات الاتصال.\n\n"
+                
+                "📚 **الشروط الكاملة:**\n"
+                "🔗 للاطلاع على الشروط الكاملة باللغة العربية، قم بزيارة:\n"
+                "🌐 https://github.com/ramofinance/terms-and-conditions/blob/main/ar.md\n\n"
+                
+                "✅ بالنقر على 'لقد قرأت وأوافق على الشروط'، تؤكد أن:\n"
+                "• لقد قرأت القواعد أعلاه\n"
+                "• أنت توافق على جميع الشروط\n"
+                "• أنت تقبل مسؤولية الاستثمار"
+            ),
+            'agree_terms': "✅ لقد قرأت وأوافق على الشروط",
+            'disagree_terms': "❌ إلغاء الاستثمار",
+            
             'payment': "🎯 **مرحلة الدفع**\n\n💵 **مبلغ الإيداع:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n🔐 **عنوان محفظة الشركة (BEP20):**\n`{company_wallet}`\n\n📋 **تعليمات مهمة:**\n1. قم بالإيداع فقط إلى العنوان أعلاه\n2. استخدم شبكة BEP20 فقط\n3. بعد الدفع، أرسل إيصال المعاملة\n4. انتظر تأكيد الدعم الفني\n\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n📞 **الدعم:** @YourSupportUsername\n\n✅ بعد الدفع، انقر على زر '📤 إرسال إيصال المعاملة'.",
             'receipt_request': "📤 **الرجاء إرسال إيصال المعاملة**\n\nيمكنك:\n• إرسال هاش المعاملة (Transaction Hash) كنص\n• أو إرسال صورة/لقطة شاشة للإيصال\n\nمثال لهاش المعاملة:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ إذا لم يكن لديك إيصال، يمكنك النقر على '⏭️ بدون إيصال'.",
             'receipt_received': "✅ **تم استلام إيصال معاملتك!**\n\n📋 جاري تسجيل طلب الاستثمار...",
@@ -169,14 +290,74 @@ def get_investment_texts(language):
             'invalid_receipt': "⚠️ الرجاء إرسال إيصال المعاملة (الهاش) أو صورة الإيصال."
         },
         'en': {
-            'menu': "💰 **Investment System**\n\n📊 **Investment Conditions:**\n• Minimum: $500\n• Annual profit with monthly payout:\n   🟢 50% annually: For $500 to $5,000\n   🔵 60% annually: For $5,000 to $10,000\n   🟣 70% annually: For over $10,000\n\n📋 **Process:**\n1. Choose investment amount\n2. Get wallet address for deposit\n3. Make deposit\n4. Send transaction receipt\n5. Confirmation by support\n6. Start profit calculation\n\nPlease choose an option:",
+            'menu': "💰 **Investment System**\n\n📊 **Investment Conditions:**\n• Minimum: $500\n• Annual profit with monthly payout:\n   🟢 50% annually: For $500 to $5,000\n   🔵 60% annually: For $5,000 to $10,000\n   🟣 70% annually: For over $10,000\n\n📋 **Process:**\n1. Choose investment amount\n2. Read and accept terms\n3. Get wallet address for deposit\n4. Make deposit\n5. Send transaction receipt\n6. Confirmation by support\n7. Start profit calculation\n\nPlease choose an option:",
             'no_wallet': "⚠️ **Please register your wallet address first!**\n\nTo invest, you need to register your BEP20 wallet address in your profile.\n\n🔹 Go to Profile\n🔹 Click 'Edit Wallet'\n🔹 Enter your wallet address\n\nThen you can invest.",
-            'enter_amount': "💰 **New Investment**\n\nPlease enter your investment amount (in USD):\n\n📊 **Annual Profit Rate (Monthly Payout):**\n• 🟢 50% annually: For $500 to $5,000\n• 🔵 60% annually: For $5,000 to $10,000\n• 🟣 70% annually: For over $10,000\n\n💰 **Monthly Payout Calculation:**\n(Annual rate divided by 3 months)\n• 🟢 ~4.17% monthly\n• 🔵 ~5% monthly\n• 🟣 ~5.83% monthly\n\n💵 **Minimum amount:** $500\n\nExample: 500 or 7500 or 15000",
+            'enter_amount': "💰 **New Investment**\n\nPlease enter your investment amount (in USD):\n\n📊 **Annual Profit Rate (Monthly Payout):**\n• 🟢 50% annually: For $500 to $5,000\n• 🔵 60% annually: For $5,000 to $10,000\n• 🟣 70% annually: For over $10,000\n\n💰 **Monthly Payout Calculation:**\n(Annual rate divided by 12 months)\n• 🟢 ~4.17% monthly\n• 🔵 ~5% monthly\n• 🟣 ~5.83% monthly\n\n💵 **Minimum amount:** $500\n\nExample: 500 or 7500 or 15000",
             'min_amount': "⚠️ Amount must be at least $500. Please enter again:",
             'invalid_amount': "⚠️ Please enter a valid number (example: 500):",
-            'details': "✅ **Investment Details**\n\n💵 **Investment Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n📅 **Start Date:** Tomorrow\n⏳ **Duration:** Unlimited\n\n⚠️ **Important:**\n• After payment confirmation, monthly profit calculation starts\n• Profit sent to your wallet every month\n• Principal withdrawal possible after 12 months\n\nDo you want to continue?",
+            'details': "✅ **Investment Details**\n\n💵 **Investment Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n📅 **Start Date:** Tomorrow\n⏳ **Duration:** Unlimited\n\n⚠️ **Important:**\n• After payment confirmation, monthly profit calculation starts\n• Profit sent to your wallet every month\n• Principal withdrawal possible after 3 months\n\nDo you want to continue?",
             'confirm_yes': "✅ Yes, Continue",
             'confirm_no': "❌ No, Cancel",
+            
+            # English terms and conditions
+            'terms_and_conditions': (
+                "📜 **RAMO FINANCE Investment Terms & Conditions**\n\n"
+                "**Article 1 – Nature of Cooperation**\n"
+                "• This cooperation is based on capital management in international financial markets.\n"
+                "• Financial markets inherently involve risk, and both profit and loss are possible.\n"
+                "• The Investor provides capital with full awareness of market risks.\n"
+                "• No guaranteed profit is provided.\n\n"
+                
+                "**Article 2 – Trading Operations**\n"
+                "• The Trader commits to managing trades professionally and responsibly.\n"
+                "• The Trader may use various trading methods including spot, margin, futures, and other financial instruments.\n"
+                "• Trading may be conducted through domestic or international platforms.\n"
+                "• The Investor will be informed in case of significant market events.\n"
+                "• The Investor acknowledges that the Trader does not hold an official financial asset management license.\n\n"
+                
+                "**Article 3 – Profit and Loss Distribution**\n"
+                "• Profits and losses shall be shared based on the agreed percentage.\n"
+                "• Profits are distributed monthly via BEP20 network to the Investor's designated wallet.\n"
+                "• In case of loss, a performance report will be provided.\n"
+                "• A maximum drawdown limit of 20% of total capital is defined. Trading activity will be paused if this limit is reached.\n\n"
+                
+                "**Article 4 – Trader Obligations**\n"
+                "• Maintain confidentiality\n"
+                "• Professional capital management\n"
+                "• Transparent reporting\n"
+                "• Acting in good faith toward the Investor's interest\n\n"
+                
+                "**Article 5 – Investor Obligations**\n"
+                "• Timely capital transfer\n"
+                "• No interference in trading execution\n"
+                "• Acceptance of market risks\n"
+                "• No claims in case of loss unless proven misconduct or negligence\n\n"
+                
+                "**Important Clause:**\n"
+                "The Investor confirms that no guaranteed profit has been promised by the Trader and that all investment decisions are made with full understanding of market risks.\n\n"
+                
+                "**Article 6 – Termination**\n"
+                "• Either party may terminate the cooperation with 30 days written notice in case of breach.\n"
+                "• Upon termination, capital and realized profit up to the termination date shall be settled.\n\n"
+                
+                "**Article 7 – Force Majeure**\n"
+                "• Neither party shall be liable for failure to perform obligations due to events beyond their control (war, internet disruption, sanctions, infrastructure failure, etc.).\n\n"
+                
+                "**Article 8 – Change of Contact Information**\n"
+                "• Any change in contact details must be communicated to the other party.\n\n"
+                
+                "📚 **Full Terms & Conditions:**\n"
+                "🔗 For complete terms and conditions in English, visit:\n"
+                "🌐 https://github.com/ramofinance/terms-and-conditions/blob/main/en.md\n\n"
+                
+                "✅ By clicking 'I have read and agree to the terms', you confirm that:\n"
+                "• You have read the above rules\n"
+                "• You agree to all conditions\n"
+                "• You accept the investment responsibility"
+            ),
+            'agree_terms': "✅ I have read and agree to the terms",
+            'disagree_terms': "❌ Cancel Investment",
+            
             'payment': "🎯 **Payment Step**\n\n💵 **Deposit Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n🔐 **Company Wallet Address (BEP20):**\n`{company_wallet}`\n\n📋 **Important Instructions:**\n1. Send only to the address above\n2. Use BEP20 network only\n3. After payment, send transaction receipt\n4. Wait for support confirmation\n\n⏰ **Confirmation Time:** Max 24 hours\n📞 **Support:** @YourSupportUsername\n\n✅ After payment, click the '📤 Send Transaction Receipt' button.",
             'receipt_request': "📤 **Please send your transaction receipt**\n\nYou can:\n• Send Transaction Hash as text\n• Or send photo/screenshot of receipt\n\nTransaction Hash example:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ If you don't have receipt, you can click '⏭️ No Receipt'.",
             'receipt_received': "✅ **Your transaction receipt has been received!**\n\n📋 Registering your investment request...",
@@ -357,27 +538,82 @@ async def process_investment_confirmation(message: Message, state: FSMContext, b
     monthly_profit = data.get('monthly_profit')
     monthly_percentage = data.get('monthly_percentage')
     
-    # آدرس کیف پول شرکت
-    company_wallet = os.getenv("COMPANY_WALLET", "0x1234567890abcdef1234567890abcdef12345678")
-    
-    payment_instructions = texts['payment'].format(
+    # ذخیره مجدد داده‌ها (برای استفاده در مراحل بعد)
+    await state.update_data(
         amount=amount,
         annual_percentage=annual_percentage,
-        monthly_percentage=monthly_percentage,
         monthly_profit=monthly_profit,
-        company_wallet=company_wallet
+        monthly_percentage=monthly_percentage
     )
     
+    # نمایش قوانین و مقررات
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📤 ارسال رسید تراکنش" if language == 'fa' else "📤 إرسال إيصال المعاملة" if language == 'ar' else "📤 Send Transaction Receipt")],
-            [KeyboardButton(text=texts['cancel_invest'])]
+            [KeyboardButton(text=texts['agree_terms'])],
+            [KeyboardButton(text=texts['disagree_terms'])]
         ],
         resize_keyboard=True
     )
     
-    await message.answer(payment_instructions, reply_markup=keyboard)
-    await state.set_state(InvestmentStates.waiting_for_wallet_payment)
+    await message.answer(
+        texts['terms_and_conditions'],
+        reply_markup=keyboard,
+        parse_mode="Markdown"
+    )
+    await state.set_state(InvestmentStates.waiting_for_terms_agreement)
+
+@router.message(InvestmentStates.waiting_for_terms_agreement)
+async def process_terms_agreement(message: Message, state: FSMContext, bot: Bot):
+    """پردازش تأیید قوانین توسط کاربر"""
+    user_id = message.from_user.id
+    language = db.get_user_language(user_id)
+    
+    texts = get_investment_texts(language)
+    
+    # اگر کاربر انصراف داد
+    if message.text == texts['disagree_terms']:
+        await state.clear()
+        await message.answer(
+            texts['cancelled'], 
+            reply_markup=get_investment_keyboard(language)
+        )
+        return
+    
+    # اگر کاربر قوانین را تأیید کرد
+    if message.text == texts['agree_terms']:
+        data = await state.get_data()
+        amount = data.get('amount')
+        annual_percentage = data.get('annual_percentage')
+        monthly_profit = data.get('monthly_profit')
+        monthly_percentage = data.get('monthly_percentage')
+        
+        # آدرس کیف پول شرکت
+        company_wallet = os.getenv("COMPANY_WALLET", "0x1234567890abcdef1234567890abcdef12345678")
+        
+        payment_instructions = texts['payment'].format(
+            amount=amount,
+            annual_percentage=annual_percentage,
+            monthly_percentage=monthly_percentage,
+            monthly_profit=monthly_profit,
+            company_wallet=company_wallet
+        )
+        
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📤 ارسال رسید تراکنش" if language == 'fa' else 
+                               "📤 إرسال إيصال المعاملة" if language == 'ar' else 
+                               "📤 Send Transaction Receipt")],
+                [KeyboardButton(text=texts['cancel_invest'])]
+            ],
+            resize_keyboard=True
+        )
+        
+        await message.answer(payment_instructions, reply_markup=keyboard)
+        await state.set_state(InvestmentStates.waiting_for_wallet_payment)
+        return
+    
+    # اگر کاربر گزینه نامعتبر انتخاب کرد
+    await message.answer(texts['choose_option'])
 
 @router.message(InvestmentStates.waiting_for_wallet_payment)
 async def process_payment_step(message: Message, state: FSMContext):
