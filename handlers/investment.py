@@ -490,10 +490,6 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     start_date = datetime.now()
     end_date = start_date + timedelta(days=365*10)
     
-    # 📌 مهم: اینجا فقط از ستون‌هایی که در دیتابیس اصلی وجود دارند استفاده می‌کنیم
-    # در فایل اصلی شما، جدول investments این ستون‌ها را دارد:
-    # investment_id, user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, transaction_receipt, receipt_type, created_at, updated_at
-    
     cursor.execute('''
         INSERT INTO investments 
         (user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, transaction_receipt, receipt_type)
@@ -502,11 +498,11 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
         user_id,
         f"{annual_percentage}% Annual",
         amount,
-        999,  # duration (999 به معنی نامحدود)
+        999,
         start_date.strftime('%Y-%m-%d %H:%M:%S'),
         end_date.strftime('%Y-%m-%d %H:%M:%S'),
         'pending',
-        monthly_percentage,  # درصد سود ماهانه
+        monthly_percentage,
         receipt_text,
         receipt_type
     ))
@@ -514,7 +510,7 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     db.conn.commit()
     investment_id = cursor.lastrowid
     
-    # 📌 ارسال نوتیفیکیشن به ادمین‌ها
+    # ارسال نوتیفیکیشن به ادمین‌ها
     await send_investment_notification_to_admins(
         bot, investment_id, user_name, user_id, amount, 
         annual_percentage, monthly_profit, monthly_percentage, user_wallet,
@@ -556,9 +552,9 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
             admin_data = db.get_user(admin_id)
             admin_lang = admin_data[1] if admin_data else 'fa'
             
-            # ✅ اصلاح اینجا: برای هش تراکنش، کل متن رو نشون بده
+            # نمایش کامل هش تراکنش برای نوع text
             if receipt_type == "text":
-                receipt_display = receipt_text  # کل هش تراکنش نمایش داده شود
+                receipt_display = receipt_text
             else:
                 receipt_display = receipt_text
                 if len(receipt_text) > 100:
@@ -716,7 +712,7 @@ async def show_user_investments(message: Message):
             inv_id=inv_id,
             package=package,
             amount=amount,
-            annual_percentage=monthly_percent * 12,  # محاسبه سود سالانه از ماهانه
+            annual_percentage=monthly_percent * 12,
             monthly_profit=monthly_profit,
             status_text=status_text,
             start_date=start_date[:10]
