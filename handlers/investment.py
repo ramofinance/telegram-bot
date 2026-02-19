@@ -14,7 +14,7 @@ db = Database()
 class InvestmentStates(StatesGroup):
     waiting_for_amount = State()
     waiting_for_confirmation = State()
-    waiting_for_terms_agreement = State()  # مرحله قوانین
+    waiting_for_terms_agreement = State()
     waiting_for_wallet_payment = State()
     waiting_for_transaction_receipt = State()
 
@@ -94,20 +94,18 @@ def calculate_annual_profit_percentage(amount: float) -> float:
     if amount < 500:
         return 0
     elif amount <= 5000:
-        return 50  # 50% سالانه
+        return 50
     elif amount <= 10000:
-        return 60  # 60% سالانه
+        return 60
     else:
-        return 70  # 70% سالانه
+        return 70
 
 def calculate_monthly_profit_from_annual(amount: float, annual_percentage: float) -> float:
-    """محاسبه سود ماهانه از سود سالانه"""
     annual_profit = (amount * annual_percentage) / 100
     monthly_profit = annual_profit / 12
     return monthly_profit
 
 def calculate_monthly_profit_percentage(annual_percentage: float) -> float:
-    """محاسبه درصد سود ماهانه از درصد سالانه"""
     return annual_percentage / 12
 
 def get_investment_texts(language):
@@ -123,7 +121,6 @@ def get_investment_texts(language):
             'confirm_yes': "✅ بله، ادامه می‌دهم",
             'confirm_no': "❌ خیر، انصراف",
             
-            # فقط لینک قوانین - بدون متن اضافی
             'terms_and_conditions': (
                 "📜 **قوانین و مقررات سرمایه‌گذاری**\n\n"
                 "🔗 لطفاً قوانین و مقررات را از لینک زیر مطالعه کنید:\n"
@@ -161,7 +158,6 @@ def get_investment_texts(language):
             'confirm_yes': "✅ نعم، أتابع",
             'confirm_no': "❌ لا، إلغاء",
             
-            # Arabic - فقط لینک قوانین
             'terms_and_conditions': (
                 "📜 **الشروط والأحكام**\n\n"
                 "🔗 يرجى قراءة الشروط والأحكام من الرابط التالي:\n"
@@ -199,7 +195,6 @@ def get_investment_texts(language):
             'confirm_yes': "✅ Yes, Continue",
             'confirm_no': "❌ No, Cancel",
             
-            # English - فقط لینک قوانین
             'terms_and_conditions': (
                 "📜 **Terms and Conditions**\n\n"
                 "🔗 Please read the terms and conditions from the link below:\n"
@@ -449,26 +444,38 @@ async def process_transaction_receipt(message: Message, state: FSMContext, bot: 
     
     if message.text in ["⏭️ بدون رسید", "⏭️ بدون إيصال", "⏭️ No Receipt"]:
         await message.answer(texts['receipt_skip'])
-        await complete_investment_with_receipt(message, state, bot, "بدون رسید", "none")
+        receipt_text = "بدون رسید"
+        receipt_type = "none"
+        await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
         return
     
     if message.content_type == ContentType.PHOTO:
         receipt_text = f"📷 عکس رسید - فایل ID: {message.photo[-1].file_id}"
+        receipt_type = "photo"
         await message.answer(texts['receipt_received'])
+        
+        # ارسال عکس به ادمین‌ها
         await forward_photo_to_admins(message, bot, user_id)
-        await complete_investment_with_receipt(message, state, bot, receipt_text, "photo")
+        
+        await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
         return
     
     if message.content_type == ContentType.DOCUMENT:
         receipt_text = f"📄 فایل رسید - فایل ID: {message.document.file_id}"
+        receipt_type = "document"
         await message.answer(texts['receipt_received'])
+        
+        # ارسال فایل به ادمین‌ها
         await forward_document_to_admins(message, bot, user_id)
-        await complete_investment_with_receipt(message, state, bot, receipt_text, "document")
+        
+        await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
         return
     
     if message.text:
+        receipt_text = message.text
+        receipt_type = "text"
         await message.answer(texts['receipt_received'])
-        await complete_investment_with_receipt(message, state, bot, message.text, "text")
+        await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
         return
     
     await message.answer(texts['invalid_receipt'])
@@ -512,6 +519,7 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     db.conn.commit()
     investment_id = cursor.lastrowid
     
+    # ارسال نوتیفیکیشن به ادمین‌ها
     await send_investment_notification_to_admins(
         bot, investment_id, user_name, user_id, amount, 
         annual_percentage, monthly_profit, monthly_percentage, user_wallet,
@@ -541,6 +549,12 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
         return
     
     admin_ids = [int(id_str.strip()) for id_str in admin_ids_str.split(",") if id_str.strip()]
+    
+    if not admin_ids:
+        print("⚠️ No admin IDs found")
+        return
+    
+    print(f"📢 Sending investment notification to {len(admin_ids)} admins")
     
     for admin_id in admin_ids:
         try:
@@ -583,6 +597,7 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                 )
                 
                 await bot.send_message(admin_id, notification, parse_mode="Markdown")
+                print(f"✅ Notification sent to admin {admin_id}")
                 
             elif admin_lang == 'ar':
                 notification = (
@@ -605,6 +620,7 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                 )
                 
                 await bot.send_message(admin_id, notification, parse_mode="Markdown")
+                print(f"✅ Notification sent to admin {admin_id}")
                 
             else:
                 notification = (
@@ -627,11 +643,28 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                 )
                 
                 await bot.send_message(admin_id, notification, parse_mode="Markdown")
-            
-            print(f"✅ Investment notification sent to admin {admin_id}")
+                print(f"✅ Notification sent to admin {admin_id}")
             
         except Exception as e:
             print(f"❌ Failed to notify admin {admin_id}: {type(e).__name__}: {e}")
+            try:
+                simple_message = (
+                    f"💰 سرمایه‌گذاری جدید\n\n"
+                    f"🆔 شناسه: #{investment_id}\n"
+                    f"👤 کاربر: {user_name}\n"
+                    f"💵 مبلغ: ${amount:,.2f}\n"
+                    f"📈 سود سالانه: {annual_percentage}%\n"
+                    f"📊 سود ماهانه: ~{monthly_percentage:.2f}%\n"
+                    f"🔐 کیف پول: {user_wallet[:10]}...\n\n"
+                    f"📋 رسید: {receipt_icon} {receipt_type_text}\n"
+                    f"✅ تایید: /confirm_invest_{investment_id}\n"
+                    f"❌ رد: /reject_invest_{investment_id}\n"
+                    f"👁️ جزئیات: /user_{user_id}"
+                )
+                await bot.send_message(admin_id, simple_message)
+                print(f"✅ Simple notification sent to admin {admin_id}")
+            except Exception as e2:
+                print(f"❌ Failed to send simple notification too: {e2}")
 
 @router.message(F.text.in_(["📊 سرمایه‌گذاری‌های من", "📊 My Investments", "📊 استثماراتي"]))
 async def show_user_investments(message: Message):
