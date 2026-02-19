@@ -402,7 +402,7 @@ async def process_terms_agreement(message: Message, state: FSMContext, bot: Bot)
             resize_keyboard=True
         )
         
-        await message.answer(payment_instructions, reply_markup=keyboard)
+        await message.answer(payment_instructions, reply_markup=keyboard, parse_mode="HTML")
         await state.set_state(InvestmentStates.waiting_for_wallet_payment)
         return
     
