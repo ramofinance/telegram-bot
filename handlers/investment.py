@@ -19,7 +19,6 @@ class InvestmentStates(StatesGroup):
     waiting_for_transaction_receipt = State()
 
 def is_admin(user_id: int) -> bool:
-    """بررسی اینکه کاربر ادمین هست یا نه"""
     admin_ids_str = os.getenv("ADMIN_IDS", "")
     if admin_ids_str:
         admin_ids = [int(id_str.strip()) for id_str in admin_ids_str.split(",") if id_str.strip()]
@@ -27,7 +26,6 @@ def is_admin(user_id: int) -> bool:
     return False
 
 def get_investment_keyboard(language='fa'):
-    """منوی سرمایه‌گذاری"""
     if language == 'fa':
         return ReplyKeyboardMarkup(
             keyboard=[
@@ -60,7 +58,6 @@ def get_investment_keyboard(language='fa'):
         )
 
 def get_receipt_keyboard(language='fa'):
-    """کیبورد برای ارسال رسید"""
     if language == 'fa':
         return ReplyKeyboardMarkup(
             keyboard=[
@@ -90,7 +87,6 @@ def get_receipt_keyboard(language='fa'):
         )
 
 def calculate_annual_profit_percentage(amount: float) -> float:
-    """محاسبه درصد سود سالانه بر اساس مبلغ"""
     if amount < 500:
         return 0
     elif amount <= 5000:
@@ -109,7 +105,6 @@ def calculate_monthly_profit_percentage(annual_percentage: float) -> float:
     return annual_percentage / 12
 
 def get_investment_texts(language):
-    """متن‌های سرمایه‌گذاری بر اساس زبان"""
     texts = {
         'fa': {
             'menu': "💰 **سیستم سرمایه‌گذاری**\n\n📊 **شرایط سرمایه‌گذاری:**\n• حداقل سرمایه: ۵۰۰ دلار\n• سود سالانه با پرداخت ماهانه:\n   🟢 ۵۰٪ سالانه: برای ۵۰۰ تا ۵,۰۰۰ دلار\n   🔵 ۶۰٪ سالانه: برای ۵,۰۰۰ تا ۱۰,۰۰۰ دلار\n   🟣 ۷۰٪ سالانه: برای بالای ۱۰,۰۰۰ دلار\n\n📋 **مراحل:**\n1. انتخاب مبلغ سرمایه‌گذاری\n2. مطالعه و پذیرش قوانین\n3. دریافت آدرس کیف پول برای واریز\n4. واریز مبلغ\n5. ارسال رسید تراکنش\n6. تایید توسط پشتیبانی\n7. شروع محاسبه سود\n\nلطفاً یک گزینه را انتخاب کنید:",
@@ -226,7 +221,6 @@ def get_investment_texts(language):
     return texts.get(language, texts['en'])
 
 async def forward_photo_to_admins(message: Message, bot: Bot, user_id: int):
-    """فوروارد عکس به ادمین‌ها"""
     admin_ids_str = os.getenv("ADMIN_IDS", "")
     if not admin_ids_str:
         print("⚠️ ADMIN_IDS not set for photo forwarding")
@@ -250,7 +244,6 @@ async def forward_photo_to_admins(message: Message, bot: Bot, user_id: int):
             print(f"❌ Failed to forward photo to admin {admin_id}: {type(e).__name__}: {e}")
 
 async def forward_document_to_admins(message: Message, bot: Bot, user_id: int):
-    """فوروارد فایل به ادمین‌ها"""
     admin_ids_str = os.getenv("ADMIN_IDS", "")
     if not admin_ids_str:
         print("⚠️ ADMIN_IDS not set for document forwarding")
@@ -454,7 +447,6 @@ async def process_transaction_receipt(message: Message, state: FSMContext, bot: 
         receipt_type = "photo"
         await message.answer(texts['receipt_received'])
         
-        # ارسال عکس به ادمین‌ها
         await forward_photo_to_admins(message, bot, user_id)
         
         await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
@@ -465,7 +457,6 @@ async def process_transaction_receipt(message: Message, state: FSMContext, bot: 
         receipt_type = "document"
         await message.answer(texts['receipt_received'])
         
-        # ارسال فایل به ادمین‌ها
         await forward_document_to_admins(message, bot, user_id)
         
         await complete_investment_with_receipt(message, state, bot, receipt_text, receipt_type)
@@ -499,19 +490,23 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     start_date = datetime.now()
     end_date = start_date + timedelta(days=365*10)
     
+    # 📌 مهم: اینجا فقط از ستون‌هایی که در دیتابیس اصلی وجود دارند استفاده می‌کنیم
+    # در فایل اصلی شما، جدول investments این ستون‌ها را دارد:
+    # investment_id, user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, transaction_receipt, receipt_type, created_at, updated_at
+    
     cursor.execute('''
-        INSERT INTO investments (user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, annual_profit_percent, transaction_receipt, receipt_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO investments 
+        (user_id, package, amount, duration, start_date, end_date, status, monthly_profit_percent, transaction_receipt, receipt_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         user_id,
         f"{annual_percentage}% Annual",
         amount,
-        999,
+        999,  # duration (999 به معنی نامحدود)
         start_date.strftime('%Y-%m-%d %H:%M:%S'),
         end_date.strftime('%Y-%m-%d %H:%M:%S'),
         'pending',
-        monthly_percentage,
-        annual_percentage,
+        monthly_percentage,  # درصد سود ماهانه
         receipt_text,
         receipt_type
     ))
@@ -519,7 +514,7 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     db.conn.commit()
     investment_id = cursor.lastrowid
     
-    # ارسال نوتیفیکیشن به ادمین‌ها
+    # 📌 ارسال نوتیفیکیشن به ادمین‌ها
     await send_investment_notification_to_admins(
         bot, investment_id, user_name, user_id, amount, 
         annual_percentage, monthly_profit, monthly_percentage, user_wallet,
@@ -674,7 +669,7 @@ async def show_user_investments(message: Message):
     
     cursor = db.conn.cursor()
     cursor.execute('''
-        SELECT investment_id, package, amount, start_date, status, annual_profit_percent, monthly_profit_percent
+        SELECT investment_id, package, amount, start_date, status, monthly_profit_percent
         FROM investments 
         WHERE user_id = ?
         ORDER BY start_date DESC
@@ -697,19 +692,16 @@ async def show_user_investments(message: Message):
     
     response = texts['investments_title']
     for inv in investments:
-        inv_id, package, amount, start_date, status, annual_percent, monthly_percent = inv
+        inv_id, package, amount, start_date, status, monthly_percent = inv
         status_text = status_dict.get(status, status)
         
-        if monthly_percent:
-            monthly_profit = (amount * monthly_percent) / 100
-        else:
-            monthly_profit = (amount * (annual_percent / 12)) / 100
+        monthly_profit = (amount * monthly_percent) / 100
         
         investment_item = texts['investment_item'].format(
             inv_id=inv_id,
             package=package,
             amount=amount,
-            annual_percentage=annual_percent or "N/A",
+            annual_percentage=monthly_percent * 12,  # محاسبه سود سالانه از ماهانه
             monthly_profit=monthly_profit,
             status_text=status_text,
             start_date=start_date[:10]
@@ -741,7 +733,7 @@ async def show_balance_profit(message: Message):
     total_investment = cursor.fetchone()[0] or 0
     
     cursor.execute('''
-        SELECT SUM(amount * COALESCE(monthly_profit_percent, annual_profit_percent / 12) / 100) 
+        SELECT SUM(amount * monthly_profit_percent / 100) 
         FROM investments 
         WHERE user_id = ? AND status = "active"
     ''', (user_id,))
