@@ -556,9 +556,13 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
             admin_data = db.get_user(admin_id)
             admin_lang = admin_data[1] if admin_data else 'fa'
             
-            receipt_display = receipt_text
-            if receipt_type == "text" and len(receipt_text) > 100:
-                receipt_display = f"{receipt_text[:20]}...{receipt_text[-10:]}"
+            # ✅ اصلاح اینجا: برای هش تراکنش، کل متن رو نشون بده
+            if receipt_type == "text":
+                receipt_display = receipt_text  # کل هش تراکنش نمایش داده شود
+            else:
+                receipt_display = receipt_text
+                if len(receipt_text) > 100:
+                    receipt_display = f"{receipt_text[:50]}...{receipt_text[-30:]}"
             
             receipt_icon = {
                 'none': '❌', 'text': '📄', 'photo': '📷', 'document': '📎'
@@ -595,6 +599,11 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                 print(f"✅ Notification sent to admin {admin_id}")
                 
             elif admin_lang == 'ar':
+                receipt_type_text_ar = {
+                    'none': 'بدون إيصال', 'text': 'هاش المعاملة', 
+                    'photo': 'صورة الإيصال', 'document': 'ملف الإيصال'
+                }.get(receipt_type, 'غير معروف')
+                
                 notification = (
                     "💰 *طلب استثمار جديد*\n\n"
                     f"🆔 *معرف الاستثمار:* #{investment_id}\n"
@@ -606,7 +615,7 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"💰 *الربح الشهري:* ${monthly_profit:,.2f}\n"
                     f"🔐 *محفظة المستخدم:* {user_wallet[:10]}...\n\n"
                     f"📋 *إيصال المعاملة:*\n"
-                    f"📌 *النوع:* {receipt_icon} {receipt_type_text}\n"
+                    f"📌 *النوع:* {receipt_icon} {receipt_type_text_ar}\n"
                     f"📎 *المحتوى:* `{receipt_display}`\n\n"
                     f"📅 *وقت الطلب:* {current_time}\n\n"
                     f"✅ *للتأكيد:* /confirm_invest_{investment_id}\n"
@@ -618,6 +627,11 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                 print(f"✅ Notification sent to admin {admin_id}")
                 
             else:
+                receipt_type_text_en = {
+                    'none': 'No receipt', 'text': 'Transaction hash', 
+                    'photo': 'Receipt photo', 'document': 'Receipt file'
+                }.get(receipt_type, 'Unknown')
+                
                 notification = (
                     "💰 *New Investment Request*\n\n"
                     f"🆔 *Investment ID:* #{investment_id}\n"
@@ -629,7 +643,7 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"💰 *Monthly Profit:* ${monthly_profit:,.2f}\n"
                     f"🔐 *User Wallet:* {user_wallet[:10]}...\n\n"
                     f"📋 *Transaction Receipt:*\n"
-                    f"📌 *Type:* {receipt_icon} {receipt_type_text}\n"
+                    f"📌 *Type:* {receipt_icon} {receipt_type_text_en}\n"
                     f"📎 *Content:* `{receipt_display}`\n\n"
                     f"📅 *Request Time:* {current_time}\n\n"
                     f"✅ *To confirm:* /confirm_invest_{investment_id}\n"
@@ -652,6 +666,7 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
                     f"📊 سود ماهانه: ~{monthly_percentage:.2f}%\n"
                     f"🔐 کیف پول: {user_wallet[:10]}...\n\n"
                     f"📋 رسید: {receipt_icon} {receipt_type_text}\n"
+                    f"📎 محتوا: {receipt_display}\n\n"
                     f"✅ تایید: /confirm_invest_{investment_id}\n"
                     f"❌ رد: /reject_invest_{investment_id}\n"
                     f"👁️ جزئیات: /user_{user_id}"
