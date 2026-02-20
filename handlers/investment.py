@@ -137,7 +137,7 @@ def get_investment_texts(language):
             'active_status': "✅ **در حال کسب سود**\n",
             'total_active': "📈 **مجموع سرمایه فعال:** ${total_active:,.2f}",
             'balance_title': "💰 **وضعیت مالی شما**\n\n",
-            'balance_details': "💵 **موجودی حساب:** ${balance:,.2f}\n📊 **سرمایه‌گذاری فعال:** ${total_investment:,.2f}\n📈 **سود ماهانه کل:** ${total_monthly_profit:,.2f}\n🔢 **تعداد سرمایه‌گذاری‌ها:** {active_count}\n\n📋 **جزئیات:**\n• موجودی قابل برداشت: ${balance:,.2f}\n• مجموع سود ماهانه: ${total_monthly_profit:,.2f}\n• سود روزانه: ${daily_profit:,.2f}\n\n💳 **برداشت موجودی:**\nبرای برداشت موجودی، با پشتیبانی تماس بگیرید.\n📞 پشتیبانی: @YourSupportUsername",
+            'balance_details': "💵 **موجودی حساب:** ${balance:,.2f}\n📊 **سرمایه‌گذاری فعال:** ${total_investment:,.2f}\n📈 **سود ماهانه کل:** ${total_monthly_profit:,.2f}\n🔢 **تعداد سرمایه‌گذاری‌ها:** {active_count}\n\n📋 **جزئیات:**\n• موجودی قابل برداشت: ${balance:,.2f}\n• مجموع سود ماهانه: ${total_monthly_profit:,.2f}\n• سود روزانه: ${daily_profit:,.2f}\n\n💳 **برداشت موجودی:**\nبرای برداشت موجودی، با پشتیبانی تماس بگیرید.\n📞 پشتیبانی: از طریق تیکت",
             'back': "🔙 بازگشت به منوی سرمایه‌گذاری",
             'cancelled': "❌ سرمایه‌گذاری لغو شد.",
             'choose_option': "⚠️ لطفاً یکی از گزینه‌ها را انتخاب کنید.",
@@ -174,7 +174,7 @@ def get_investment_texts(language):
             'active_status': "✅ **في طور جني الربح**\n",
             'total_active': "📈 **إجمالي الاستثمار النشط:** ${total_active:,.2f}",
             'balance_title': "💰 **وضعك المالي**\n\n",
-            'balance_details': "💵 **رصيد الحساب:** ${balance:,.2f}\n📊 **الاستثمار النشط:** ${total_investment:,.2f}\n📈 **إجمالي الربح الشهري:** ${total_monthly_profit:,.2f}\n🔢 **عدد الاستثمارات:** {active_count}\n\n📋 **التفاصيل:**\n• الرصيد القابل للسحب: ${balance:,.2f}\n• إجمالي الربح الشهري: ${total_monthly_profit:,.2f}\n• الربح اليومي: ${daily_profit:,.2f}\n\n💳 **سحب الرصيد:**\nلاتصال بسحب الرصيد، اتصل بالدعم الفني.\n📞 الدعم: @YourSupportUsername",
+            'balance_details': "💵 **رصيد الحساب:** ${balance:,.2f}\n📊 **الاستثمار النشط:** ${total_investment:,.2f}\n📈 **إجمالي الربح الشهري:** ${total_monthly_profit:,.2f}\n🔢 **عدد الاستثمارات:** {active_count}\n\n📋 **التفاصيل:**\n• الرصيد القابل للسحب: ${balance:,.2f}\n• إجمالي الربح الشهري: ${total_monthly_profit:,.2f}\n• الربح اليومي: ${daily_profit:,.2f}\n\n💳 **سحب الرصيد:**\nلاتصال بسحب الرصيد، اتصل بالدعم الفني.\n📞 الدعم: عبر التذكرة",
             'back': "🔙 رجوع إلى قائمة الاستثمار",
             'cancelled': "❌ تم إلغاء الاستثمار.",
             'choose_option': "⚠️ الرجاء اختيار أحد الخيارات.",
@@ -211,7 +211,7 @@ def get_investment_texts(language):
             'active_status': "✅ **Earning profit**\n",
             'total_active': "📈 **Total Active Investment:** ${total_active:,.2f}",
             'balance_title': "💰 **Your Financial Status**\n\n",
-            'balance_details': "💵 **Account Balance:** ${balance:,.2f}\n📊 **Active Investment:** ${total_investment:,.2f}\n📈 **Total Monthly Profit:** ${total_monthly_profit:,.2f}\n🔢 **Number of Investments:** {active_count}\n\n📋 **Details:**\n• Withdrawable Balance: ${balance:,.2f}\n• Total Monthly Profit: ${total_monthly_profit:,.2f}\n• Daily Profit: ${daily_profit:,.2f}\n\n💳 **Withdraw Balance:**\nTo withdraw balance, contact support.\n📞 Support: @YourSupportUsername",
+            'balance_details': "💵 **Account Balance:** ${balance:,.2f}\n📊 **Active Investment:** ${total_investment:,.2f}\n📈 **Total Monthly Profit:** ${total_monthly_profit:,.2f}\n🔢 **Number of Investments:** {active_count}\n\n📋 **Details:**\n• Withdrawable Balance: ${balance:,.2f}\n• Total Monthly Profit: ${total_monthly_profit:,.2f}\n• Daily Profit: ${daily_profit:,.2f}\n\n💳 **Withdraw Balance:**\nTo withdraw balance, contact support.\n📞 Support: Via Ticket",
             'back': "🔙 Back to investment menu",
             'cancelled': "❌ Investment cancelled.",
             'choose_option': "⚠️ Please choose one of the options.",
