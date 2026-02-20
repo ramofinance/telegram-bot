@@ -125,7 +125,7 @@ def get_investment_texts(language):
             'agree_terms': "✅ قوانین را مطالعه کردم و قبول دارم",
             'disagree_terms': "❌ انصراف از سرمایه‌گذاری",
             
-            'payment': "🎯 **مرحله پرداخت**\n\n💵 **مبلغ واریز:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n🔐 **آدرس کیف پول شرکت (BEP20):**\n`{company_wallet}`\n\n"📋 **دستورات مهم:**\n1. فقط به آدرس بالا واریز کنید\n2. حتماً از شبکه BEP20 استفاده کنید\n3. پس از واریز، رسید تراکنش را ارسال کنید\n4. منتظر تایید پشتیبانی باشید\n\n⏰ **تایید پرداخت:** حداکثر ۲۴ ساعت\n📞 **پشتیبانی:** @YourSupportUsername\n\n✅ پس از واریز، روی دکمه '📤 ارسال رسید تراکنش' کلیک کنید.",
+            'payment': "🎯 **مرحله پرداخت**\n\n💵 **مبلغ واریز:** ${amount:,.2f}\n📈 **نرخ سود سالانه:** {annual_percentage}%\n📊 **پرداخت ماهانه:** ~{monthly_percentage:.2f}%\n💰 **سود ماهانه:** ${monthly_profit:,.2f}\n\n🔐 **آدرس کیف پول شرکت (BEP20):**\n`{company_wallet}`\n\n📋 **دستورات مهم:**\n1. فقط به آدرس بالا واریز کنید\n2. حتماً از شبکه BEP20 استفاده کنید\n3. پس از واریز، رسید تراکنش را ارسال کنید\n4. منتظر تایید پشتیبانی باشید\n\n⏰ **تایید پرداخت:** حداکثر ۲۴ ساعت\n📞 **پشتیبانی:** @YourSupportUsername\n\n✅ پس از واریز، روی دکمه '📤 ارسال رسید تراکنش' کلیک کنید.",
             'receipt_request': "📤 **لطفاً رسید تراکنش خود را ارسال کنید**\n\nمی‌توانید:\n• هش تراکنش (Transaction Hash) را به صورت متن ارسال کنید\n• یا عکس/اسکرین‌شات رسید را ارسال کنید\n\nمثال هش تراکنش:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ اگر رسید ندارید، می‌توانید '⏭️ بدون رسید' را بزنید.",
             'receipt_received': "✅ **رسید تراکنش شما دریافت شد!**\n\n📋 در حال ثبت درخواست سرمایه‌گذاری شما...",
             'receipt_skip': "⏭️ **بدون رسید ادامه می‌دهم**\n\n📋 در حال ثبت درخواست سرمایه‌گذاری شما...",
@@ -162,7 +162,7 @@ def get_investment_texts(language):
             'agree_terms': "✅ لقد قرأت وأوافق على الشروط",
             'disagree_terms': "❌ إلغاء الاستثمار",
             
-            'payment': "🎯 **مرحلة الدفع**\n\n💵 **مبلغ الإيداع:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n🔐 **عنوان محفظة الشركة (BEP20):**\n`{company_wallet}`\n\n"📋 **تعليمات مهمة:**\n1. قم بالإيداع فقط إلى العنوان أعلاه\n2. استخدم شبكة BEP20 فقط\n3. بعد الدفع، أرسل إيصال المعاملة\n4. انتظر تأكيد الدعم الفني\n\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n📞 **الدعم:** @YourSupportUsername\n\n✅ بعد الدفع، انقر على زر '📤 إرسال إيصال المعاملة'.",
+            'payment': "🎯 **مرحلة الدفع**\n\n💵 **مبلغ الإيداع:** ${amount:,.2f}\n📈 **معدل الربح السنوي:** {annual_percentage}%\n📊 **الدفع الشهري:** ~{monthly_percentage:.2f}%\n💰 **الربح الشهري:** ${monthly_profit:,.2f}\n\n🔐 **عنوان محفظة الشركة (BEP20):**\n`{company_wallet}`\n\n📋 **تعليمات مهمة:**\n1. قم بالإيداع فقط إلى العنوان أعلاه\n2. استخدم شبكة BEP20 فقط\n3. بعد الدفع، أرسل إيصال المعاملة\n4. انتظر تأكيد الدعم الفني\n\n⏰ **وقت التأكيد:** 24 ساعة كحد أقصى\n📞 **الدعم:** @YourSupportUsername\n\n✅ بعد الدفع، انقر على زر '📤 إرسال إيصال المعاملة'.",
             'receipt_request': "📤 **الرجاء إرسال إيصال المعاملة**\n\nيمكنك:\n• إرسال هاش المعاملة (Transaction Hash) كنص\n• أو إرسال صورة/لقطة شاشة للإيصال\n\nمثال لهاش المعاملة:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ إذا لم يكن لديك إيصال، يمكنك النقر على '⏭️ بدون إيصال'.",
             'receipt_received': "✅ **تم استلام إيصال معاملتك!**\n\n📋 جاري تسجيل طلب الاستثمار...",
             'receipt_skip': "⏭️ **سأستمر بدون إيصال**\n\n📋 جاري تسجيل طلب الاستثمار...",
@@ -199,7 +199,7 @@ def get_investment_texts(language):
             'agree_terms': "✅ I have read and agree to the terms",
             'disagree_terms': "❌ Cancel Investment",
             
-            'payment': "🎯 **Payment Step**\n\n💵 **Deposit Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n🔐 **Company Wallet Address (BEP20):**\n`{company_wallet}`\n\n"📋 **Important Instructions:**\n1. Send only to the address above\n2. Use BEP20 network only\n3. After payment, send transaction receipt\n4. Wait for support confirmation\n\n⏰ **Confirmation Time:** Max 24 hours\n📞 **Support:** @YourSupportUsername\n\n✅ After payment, click the '📤 Send Transaction Receipt' button.",
+            'payment': "🎯 **Payment Step**\n\n💵 **Deposit Amount:** ${amount:,.2f}\n📈 **Annual Profit Rate:** {annual_percentage}%\n📊 **Monthly Payout:** ~{monthly_percentage:.2f}%\n💰 **Monthly Profit:** ${monthly_profit:,.2f}\n\n🔐 **Company Wallet Address (BEP20):**\n`{company_wallet}`\n\n📋 **Important Instructions:**\n1. Send only to the address above\n2. Use BEP20 network only\n3. After payment, send transaction receipt\n4. Wait for support confirmation\n\n⏰ **Confirmation Time:** Max 24 hours\n📞 **Support:** @YourSupportUsername\n\n✅ After payment, click the '📤 Send Transaction Receipt' button.",
             'receipt_request': "📤 **Please send your transaction receipt**\n\nYou can:\n• Send Transaction Hash as text\n• Or send photo/screenshot of receipt\n\nTransaction Hash example:\n`0x7d5a3f5c8e1a9b0c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6`\n\n⚠️ If you don't have receipt, you can click '⏭️ No Receipt'.",
             'receipt_received': "✅ **Your transaction receipt has been received!**\n\n📋 Registering your investment request...",
             'receipt_skip': "⏭️ **I'll continue without receipt**\n\n📋 Registering your investment request...",
@@ -402,7 +402,7 @@ async def process_terms_agreement(message: Message, state: FSMContext, bot: Bot)
             resize_keyboard=True
         )
         
-        await message.answer(payment_instructions, reply_markup=keyboard)
+        await message.answer(payment_instructions, reply_markup=keyboard, parse_mode="Markdown")
         await state.set_state(InvestmentStates.waiting_for_wallet_payment)
         return
     
@@ -510,7 +510,6 @@ async def complete_investment_with_receipt(message: Message, state: FSMContext, 
     db.conn.commit()
     investment_id = cursor.lastrowid
     
-    # ارسال نوتیفیکیشن به ادمین‌ها
     await send_investment_notification_to_admins(
         bot, investment_id, user_name, user_id, amount, 
         annual_percentage, monthly_profit, monthly_percentage, user_wallet,
@@ -552,7 +551,6 @@ async def send_investment_notification_to_admins(bot: Bot, investment_id: int, u
             admin_data = db.get_user(admin_id)
             admin_lang = admin_data[1] if admin_data else 'fa'
             
-            # نمایش کامل هش تراکنش برای نوع text
             if receipt_type == "text":
                 receipt_display = receipt_text
             else:
