@@ -1335,3 +1335,82 @@ async def reject_investment(message: Message, bot: Bot):
             
     except Exception as e:
         await message.answer(f"❌ خطا: {str(e)}")
+
+
+@router.message(Command("emergency_fix2"))
+async def emergency_fix2(message: Message):
+    """دستور اضطراری برای تعمیر کامل رفرال"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    status = await message.answer("🔄 در حال تعمیر کامل دیتابیس...")
+    
+    try:
+        cursor = db.conn.cursor()
+        results = []
+        
+        # 1. اضافه کردن ستون total_invested
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN total_invested REAL DEFAULT 0.0")
+            results.append("✅ ستون total_invested اضافه شد")
+        except Exception as e:
+            results.append(f"ℹ️ total_invested: {str(e)}")
+        
+        # 2. اضافه کردن ستون total_withdrawn
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN total_withdrawn REAL DEFAULT 0.0")
+            results.append("✅ ستون total_withdrawn اضافه شد")
+        except Exception as e:
+            results.append(f"ℹ️ total_withdrawn: {str(e)}")
+        
+        # 3. اضافه کردن ستون referral_code (اگر نیست)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
+            results.append("✅ ستون referral_code اضافه شد")
+        except Exception as e:
+            results.append(f"ℹ️ referral_code: {str(e)}")
+        
+        # 4. اضافه کردن ستون referred_by (اگر نیست)
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+            results.append("✅ ستون referred_by اضافه شد")
+        except Exception as e:
+            results.append(f"ℹ️ referred_by: {str(e)}")
+        
+        # 5. ساخت کد رفرال برای کاربرانی که ندارند
+        cursor.execute("SELECT user_id FROM users WHERE referral_code IS NULL OR referral_code = ''")
+        users_without_code = cursor.fetchall()
+        
+        if users_without_code:
+            import random
+            import string
+            count = 0
+            for user in users_without_code:
+                user_id = user[0]
+                random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                code = f"RAMO{user_id}{random_part}"
+                cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
+                count += 1
+            results.append(f"✅ کد رفرال برای {count} کاربر ساخته شد")
+        
+        # 6. مقداردهی اولیه total_invested برای کاربران فعلی
+        cursor.execute("""
+            UPDATE users 
+            SET total_invested = COALESCE(
+                (SELECT SUM(amount) FROM investments WHERE user_id = users.user_id AND status = 'active'), 
+                0.0
+            )
+        """)
+        results.append("✅ total_invested به‌روز شد")
+        
+        db.conn.commit()
+        
+        # نمایش نتیجه
+        await status.edit_text(
+            "🔧 **تعمیر کامل انجام شد**\n\n" + 
+            "\n".join(results) +
+            "\n\n✅ حالا می‌توانید دوباره امتحان کنید."
+        )
+        
+    except Exception as e:
+        await status.edit_text(f"❌ خطا: {str(e)}")
