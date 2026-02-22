@@ -1,6 +1,8 @@
 # database.py
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
+import string
 
 class Database:
     def __init__(self, db_name="finance_bot.db"):
@@ -30,20 +32,20 @@ class Database:
             )
         ''')
         
-        # جدول سرمایه‌گذاری‌ها (آپدیت شده با ستون رسید تراکنش)
+        # جدول سرمایه‌گذاری‌ها
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS investments (
                 investment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
-                package TEXT,  -- '4%', '5%'
+                package TEXT,
                 amount REAL,
-                duration INTEGER,  -- تعداد ماه
+                duration INTEGER,
                 start_date TIMESTAMP,
                 end_date TIMESTAMP,
-                status TEXT DEFAULT 'pending',  -- pending/active/completed/rejected
+                status TEXT DEFAULT 'pending',
                 monthly_profit_percent REAL,
                 transaction_receipt TEXT,
-                receipt_type TEXT DEFAULT 'none',  -- none/text/photo/document
+                receipt_type TEXT DEFAULT 'none',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 confirmed_by INTEGER,
@@ -61,27 +63,27 @@ class Database:
                 user_id INTEGER,
                 subject TEXT,
                 message TEXT,
-                status TEXT DEFAULT 'open',  -- open/answered/closed
+                status TEXT DEFAULT 'open',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 admin_response TEXT,
                 responded_at TIMESTAMP,
                 responded_by INTEGER,
-                priority TEXT DEFAULT 'normal',  -- low/normal/high/urgent
-                category TEXT,  -- support/investment/technical/other
+                priority TEXT DEFAULT 'normal',
+                category TEXT,
                 FOREIGN KEY (user_id) REFERENCES users (user_id),
                 FOREIGN KEY (responded_by) REFERENCES users (user_id)
             )
         ''')
         
-        # جدول تراکنش‌ها (برای تاریخچه واریز و برداشت)
+        # جدول تراکنش‌ها
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
-                type TEXT,  -- deposit/withdrawal/profit/bonus
+                type TEXT,
                 amount REAL,
                 description TEXT,
-                status TEXT DEFAULT 'pending',  -- pending/completed/failed
+                status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 completed_at TIMESTAMP,
                 wallet_address TEXT,
@@ -101,7 +103,7 @@ class Database:
                 investment_id INTEGER,
                 amount REAL,
                 payment_date TIMESTAMP,
-                status TEXT DEFAULT 'pending',  -- pending/paid/failed
+                status TEXT DEFAULT 'pending',
                 wallet_address TEXT,
                 transaction_hash TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -115,12 +117,12 @@ class Database:
             CREATE TABLE IF NOT EXISTS notifications (
                 notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
-                type TEXT,  -- investment/profit/ticket/broadcast
+                type TEXT,
                 title TEXT,
                 message TEXT,
                 is_read INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                related_id INTEGER,  -- برای لینک به سرمایه‌گذاری/تیکت/تراکنش
+                related_id INTEGER,
                 FOREIGN KEY (user_id) REFERENCES users (user_id)
             )
         ''')
@@ -136,6 +138,22 @@ class Database:
                 user_agent TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users (user_id)
+            )
+        ''')
+        
+        # جدول رفرال‌ها (جدید)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS referrals (
+                referral_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referrer_id INTEGER,
+                referred_id INTEGER,
+                registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'completed',
+                reward_amount REAL DEFAULT 0.0,
+                reward_paid INTEGER DEFAULT 0,
+                FOREIGN KEY (referrer_id) REFERENCES users (user_id),
+                FOREIGN KEY (referred_id) REFERENCES users (user_id),
+                UNIQUE(referred_id)
             )
         ''')
         
@@ -168,7 +186,6 @@ class Database:
         self.conn.commit()
     
     def update_user_balance(self, user_id, amount, operation='add'):
-        """به‌روزرسانی موجودی کاربر"""
         cursor = self.conn.cursor()
         
         if operation == 'add':
@@ -235,7 +252,6 @@ class Database:
         cursor = self.conn.cursor()
         
         start_date = datetime.now()
-        # محاسبه تاریخ پایان (اگر duration نامحدود است، 9999 روز)
         if duration == 999:
             end_date = datetime(2099, 12, 31)
         else:
@@ -626,6 +642,116 @@ class Database:
         
         return stats
     
+    # ===== توابع رفرال (جدید) =====
+    
+    def generate_referral_code(self, user_id: int) -> str:
+        """تولید کد رفرال یکتا برای کاربر"""
+        # ترکیبی از user_id و کاراکترهای تصادفی
+        random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        code = f"RAMO{user_id}{random_part}"
+        
+        # اطمینان از یکتا بودن
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT user_id FROM users WHERE referral_code = ?", (code,))
+        while cursor.fetchone():
+            random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            code = f"RAMO{user_id}{random_part}"
+            cursor.execute("SELECT user_id FROM users WHERE referral_code = ?", (code,))
+        
+        return code
+
+    def set_user_referral_code(self, user_id: int, code: str = None):
+        """تنظیم کد رفرال برای کاربر"""
+        if not code:
+            code = self.generate_referral_code(user_id)
+        
+        cursor = self.conn.cursor()
+        cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
+        self.conn.commit()
+        return code
+
+    def get_user_referral_code(self, user_id: int) -> str:
+        """دریافت کد رفرال کاربر"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT referral_code FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        
+        if result and result[0]:
+            return result[0]
+        else:
+            # اگر کد نداشت، براش بساز
+            return self.set_user_referral_code(user_id)
+
+    def get_user_by_referral_code(self, code: str):
+        """یافتن کاربر بر اساس کد رفرال"""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT user_id FROM users WHERE referral_code = ?", (code,))
+        result = cursor.fetchone()
+        return result[0] if result else None
+
+    def register_referral(self, referrer_id: int, referred_id: int):
+        """ثبت یک دعوت جدید"""
+        cursor = self.conn.cursor()
+        
+        # بررسی تکراری نبودن
+        cursor.execute("SELECT * FROM referrals WHERE referred_id = ?", (referred_id,))
+        if cursor.fetchone():
+            return False
+        
+        cursor.execute('''
+            INSERT INTO referrals (referrer_id, referred_id, status)
+            VALUES (?, ?, 'completed')
+        ''', (referrer_id, referred_id))
+        
+        self.conn.commit()
+        
+        # به‌روزرسانی کاربر دعوت‌شده
+        cursor.execute("UPDATE users SET referred_by = ? WHERE user_id = ?", (referrer_id, referred_id))
+        self.conn.commit()
+        
+        return True
+
+    def get_user_referrals(self, user_id: int, limit: int = 20):
+        """دریافت لیست دعوت‌های یک کاربر"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            SELECT r.referred_id, u.full_name, u.registered_at, u.total_invested
+            FROM referrals r
+            JOIN users u ON r.referred_id = u.user_id
+            WHERE r.referrer_id = ?
+            ORDER BY r.registered_at DESC
+            LIMIT ?
+        ''', (user_id, limit))
+        
+        return cursor.fetchall()
+
+    def get_referral_stats(self, user_id: int):
+        """آمار دعوت‌های یک کاربر"""
+        cursor = self.conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM referrals WHERE referrer_id = ?", (user_id,))
+        total_referrals = cursor.fetchone()[0] or 0
+        
+        cursor.execute('''
+            SELECT COUNT(*) FROM referrals r
+            JOIN users u ON r.referred_id = u.user_id
+            WHERE r.referrer_id = ? AND u.total_invested > 0
+        ''', (user_id,))
+        active_referrals = cursor.fetchone()[0] or 0
+        
+        cursor.execute('''
+            SELECT SUM(u.total_invested) FROM referrals r
+            JOIN users u ON r.referred_id = u.user_id
+            WHERE r.referrer_id = ?
+        ''', (user_id,))
+        total_invested = cursor.fetchone()[0] or 0
+        
+        return {
+            'total': total_referrals,
+            'active': active_referrals,
+            'total_invested': total_invested
+        }
+    
     # ===== توابع عمومی =====
     
     def execute_query(self, query, params=()):
@@ -658,6 +784,3 @@ class Database:
     
     def close(self):
         self.conn.close()
-
-# تابع کمکی برای import timedelta
-from datetime import timedelta
