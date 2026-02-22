@@ -230,6 +230,7 @@ async def process_wallet(message: Message, state: FSMContext):
     
     # دریافت تمام داده‌ها
     data = await state.get_data()
+    print(f"🔍 Registration data: {data}")  # دیباگ
     
     # ذخیره در دیتابیس
     db.update_user_profile(
@@ -243,37 +244,41 @@ async def process_wallet(message: Message, state: FSMContext):
     # ثبت رفرال اگر وجود داشت
     referrer_id = data.get('referrer_id')
     if referrer_id:
-        db.register_referral(referrer_id, user_id)
+        print(f"🔍 Registering referral: referrer={referrer_id}, referred={user_id}")
+        success = db.register_referral(referrer_id, user_id)
+        print(f"🔍 Referral registration {'successful' if success else 'failed'}")
         
-        # ارسال نوتیفیکیشن به دعوت‌کننده
-        try:
-            referrer_lang = db.get_user_language(referrer_id)
-            if referrer_lang == 'fa':
-                await message.bot.send_message(
-                    referrer_id,
-                    f"🎉 **تبریک!**\n\n"
-                    f"یک نفر با لینک دعوت شما ثبت‌نام کرد.\n"
-                    f"👤 کاربر: {data.get('full_name', '')}\n"
-                    f"📅 تاریخ: {datetime.now().strftime('%Y-%m-%d')}"
-                )
-            elif referrer_lang == 'ar':
-                await message.bot.send_message(
-                    referrer_id,
-                    f"🎉 **تهانينا!**\n\n"
-                    f"شخص ما سجل عبر رابط دعوتك.\n"
-                    f"👤 المستخدم: {data.get('full_name', '')}\n"
-                    f"📅 التاريخ: {datetime.now().strftime('%Y-%m-%d')}"
-                )
-            else:
-                await message.bot.send_message(
-                    referrer_id,
-                    f"🎉 **Congratulations!**\n\n"
-                    f"Someone registered using your referral link.\n"
-                    f"👤 User: {data.get('full_name', '')}\n"
-                    f"📅 Date: {datetime.now().strftime('%Y-%m-%d')}"
-                )
-        except Exception as e:
-            print(f"❌ Failed to send referral notification: {e}")
+        if success:
+            # ارسال نوتیفیکیشن به دعوت‌کننده
+            try:
+                referrer_lang = db.get_user_language(referrer_id)
+                if referrer_lang == 'fa':
+                    await message.bot.send_message(
+                        referrer_id,
+                        f"🎉 **تبریک!**\n\n"
+                        f"یک نفر با لینک دعوت شما ثبت‌نام کرد.\n"
+                        f"👤 کاربر: {data.get('full_name', '')}\n"
+                        f"📅 تاریخ: {datetime.now().strftime('%Y-%m-%d')}"
+                    )
+                elif referrer_lang == 'ar':
+                    await message.bot.send_message(
+                        referrer_id,
+                        f"🎉 **تهانينا!**\n\n"
+                        f"شخص ما سجل عبر رابط دعوتك.\n"
+                        f"👤 المستخدم: {data.get('full_name', '')}\n"
+                        f"📅 التاريخ: {datetime.now().strftime('%Y-%m-%d')}"
+                    )
+                else:
+                    await message.bot.send_message(
+                        referrer_id,
+                        f"🎉 **Congratulations!**\n\n"
+                        f"Someone registered using your referral link.\n"
+                        f"👤 User: {data.get('full_name', '')}\n"
+                        f"📅 Date: {datetime.now().strftime('%Y-%m-%d')}"
+                    )
+                print(f"🔍 Referral notification sent to {referrer_id}")
+            except Exception as e:
+                print(f"❌ Failed to send referral notification: {e}")
     
     # پاک کردن state
     await state.clear()
