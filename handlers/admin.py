@@ -31,14 +31,15 @@ def is_admin(user_id: int) -> bool:
     return False
 
 def get_admin_keyboard(language='fa'):
-    """منوی ادمین - آپدیت شده"""
+    """منوی ادمین - با دکمه تعمیر رفرال"""
     if language == 'fa':
         return ReplyKeyboardMarkup(
             keyboard=[
                 [KeyboardButton(text="👥 مدیریت کاربران"), KeyboardButton(text="💰 سرمایه‌گذاری‌ها")],
                 [KeyboardButton(text="📊 آمار کلی"), KeyboardButton(text="📢 اطلاع‌رسانی")],
                 [KeyboardButton(text="🎫 تیکت‌ها"), KeyboardButton(text="🔍 جستجوی کاربر")],
-                [KeyboardButton(text="⚙️ تنظیمات سیستم"), KeyboardButton(text="🔙 منوی اصلی")]
+                [KeyboardButton(text="🔧 تعمیر رفرال"), KeyboardButton(text="⚙️ تنظیمات سیستم")],
+                [KeyboardButton(text="🔙 منوی اصلی")]
             ],
             resize_keyboard=True
         )
@@ -48,7 +49,8 @@ def get_admin_keyboard(language='fa'):
                 [KeyboardButton(text="👥 إدارة المستخدمين"), KeyboardButton(text="💰 الاستثمارات")],
                 [KeyboardButton(text="📊 الإحصائيات"), KeyboardButton(text="📢 الإذاعة")],
                 [KeyboardButton(text="🎫 التذاكر"), KeyboardButton(text="🔍 بحث المستخدم")],
-                [KeyboardButton(text="⚙️ إعدادات النظام"), KeyboardButton(text="🔙 القائمة الرئيسية")]
+                [KeyboardButton(text="🔧 إصلاح الإحالة"), KeyboardButton(text="⚙️ إعدادات النظام")],
+                [KeyboardButton(text="🔙 القائمة الرئيسية")]
             ],
             resize_keyboard=True
         )
@@ -58,7 +60,8 @@ def get_admin_keyboard(language='fa'):
                 [KeyboardButton(text="👥 User Management"), KeyboardButton(text="💰 Investments")],
                 [KeyboardButton(text="📊 Statistics"), KeyboardButton(text="📢 Broadcast")],
                 [KeyboardButton(text="🎫 Tickets"), KeyboardButton(text="🔍 Search User")],
-                [KeyboardButton(text="⚙️ System Settings"), KeyboardButton(text="🔙 Main Menu")]
+                [KeyboardButton(text="🔧 Fix Referral"), KeyboardButton(text="⚙️ System Settings")],
+                [KeyboardButton(text="🔙 Main Menu")]
             ],
             resize_keyboard=True
         )
@@ -108,7 +111,7 @@ async def admin_panel(message: Message, state: FSMContext):
 
 @router.message(F.text.in_(["👥 مدیریت کاربران", "👥 User Management", "👥 إدارة المستخدمين"]))
 async def admin_users_list(message: Message):
-    """لیست کاربران - اصلاح شده برای نمایش مستقیم"""
+    """لیست کاربران"""
     if not is_admin(message.from_user.id):
         return
     
@@ -495,7 +498,6 @@ async def admin_tickets_menu(message: Message):
     
     await message.answer(tickets_text)
 
-# هندلر پاسخ به تیکت
 @router.message(F.text.regexp(r'^/reply_\d+$'))
 async def reply_to_ticket_start(message: Message, state: FSMContext):
     """شروع پاسخ به تیکت"""
@@ -741,6 +743,143 @@ async def search_user_execute(message: Message, state: FSMContext):
     
     await state.clear()
 
+# ========== دکمه تعمیر رفرال ==========
+@router.message(F.text.in_(["🔧 تعمیر رفرال", "🔧 Fix Referral", "🔧 إصلاح الإحالة"]))
+async def quick_fix_referral(message: Message):
+    """تعمیر سریع دیتابیس رفرال"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    status_msg = await message.answer("🔄 در حال تعمیر دیتابیس رفرال...")
+    
+    try:
+        cursor = db.conn.cursor()
+        
+        # 1. بررسی و اضافه کردن ستون referral_code
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
+            await message.answer("✅ ستون referral_code اضافه شد")
+        except:
+            await message.answer("ℹ️ ستون referral_code از قبل وجود دارد")
+        
+        # 2. بررسی و اضافه کردن ستون referred_by
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+            await message.answer("✅ ستون referred_by اضافه شد")
+        except:
+            pass
+        
+        # 3. ساخت کد رفرال برای همه کاربران
+        cursor.execute("SELECT user_id FROM users")
+        users = cursor.fetchall()
+        
+        import random
+        import string
+        
+        count = 0
+        for user in users:
+            user_id = user[0]
+            # چک کن کد نداره
+            cursor.execute("SELECT referral_code FROM users WHERE user_id = ?", (user_id,))
+            existing = cursor.fetchone()
+            
+            if not existing or not existing[0]:
+                random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                code = f"RAMO{user_id}{random_part}"
+                cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
+                count += 1
+        
+        db.conn.commit()
+        
+        await message.answer(f"✅ کد رفرال برای {count} کاربر جدید ساخته شد!\n"
+                            f"👥 کل کاربران: {len(users)}")
+        
+        # 4. ساخت جدول referrals اگر نیست
+        try:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS referrals (
+                    referral_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    referrer_id INTEGER,
+                    referred_id INTEGER,
+                    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status TEXT DEFAULT 'completed',
+                    reward_amount REAL DEFAULT 0.0,
+                    reward_paid INTEGER DEFAULT 0,
+                    FOREIGN KEY (referrer_id) REFERENCES users (user_id),
+                    FOREIGN KEY (referred_id) REFERENCES users (user_id),
+                    UNIQUE(referred_id)
+                )
+            ''')
+            db.conn.commit()
+            await message.answer("✅ جدول referrals بررسی/ساخته شد")
+        except Exception as e:
+            await message.answer(f"⚠️ خطا در ساخت جدول: {e}")
+        
+        # 5. نمایش آمار نهایی
+        cursor.execute("SELECT COUNT(*) FROM users")
+        total_users = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM users WHERE referral_code IS NOT NULL")
+        users_with_code = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM referrals")
+        total_refs = cursor.fetchone()[0]
+        
+        await message.answer(
+            f"📊 **آمار نهایی:**\n"
+            f"👥 کل کاربران: {total_users}\n"
+            f"🔗 کاربران دارای کد: {users_with_code}\n"
+            f"🔄 تعداد رفرال‌های ثبت شده: {total_refs}"
+        )
+        
+    except Exception as e:
+        await message.answer(f"❌ خطا: {str(e)}")
+
+# ========== دستورات اضطراری ==========
+@router.message(Command("emergency_fix"))
+async def emergency_fix(message: Message):
+    """دستور اضطراری برای تعمیر"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    try:
+        # اجرای مستقیم دستورات SQL
+        cursor = db.conn.cursor()
+        
+        # 1. اضافه کردن ستون
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
+            await message.answer("✅ ستون referral_code اضافه شد")
+        except:
+            await message.answer("ℹ️ ستون referral_code از قبل وجود دارد")
+        
+        # 2. کد رفرال برای همه
+        cursor.execute("SELECT user_id FROM users")
+        users = cursor.fetchall()
+        
+        import random
+        import string
+        
+        count = 0
+        for user in users:
+            user_id = user[0]
+            cursor.execute("SELECT referral_code FROM users WHERE user_id = ?", (user_id,))
+            existing = cursor.fetchone()
+            
+            if not existing or not existing[0]:
+                random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                code = f"RAMO{user_id}{random_part}"
+                cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
+                count += 1
+        
+        db.conn.commit()
+        await message.answer(f"✅ تعمیر اضطراری انجام شد! {count} کاربر آپدیت شدند.")
+        
+    except Exception as e:
+        await message.answer(f"❌ خطا: {str(e)}")
+
+# ========== ادامه فایل ==========
+
 @router.message(F.text.in_(["⚙️ تنظیمات سیستم", "⚙️ System Settings", "⚙️ إعدادات النظام"]))
 async def system_settings(message: Message):
     """تنظیمات سیستم"""
@@ -826,7 +965,6 @@ async def back_to_main_menu(message: Message, state: FSMContext):
             reply_markup=get_main_menu_keyboard(language)
         )
 
-# هندلر بستن تیکت
 @router.message(F.text.regexp(r'^/close_\d+$'))
 async def close_ticket_command(message: Message):
     """بستن تیکت"""
@@ -857,7 +995,6 @@ async def close_ticket_command(message: Message):
         else:
             await message.answer("❌ Error closing ticket.")
 
-# هندلر مشاهده تیکت‌های یک کاربر خاص
 @router.message(F.text.regexp(r'^/tickets_\d+$'))
 async def view_user_tickets(message: Message):
     """مشاهده تیکت‌های یک کاربر"""
@@ -948,7 +1085,6 @@ async def view_user_tickets(message: Message):
     
     await message.answer(result_text)
 
-# هندلر مشاهده تیکت‌های باز
 @router.message(Command("opentickets"))
 async def open_tickets_command(message: Message):
     """دستور مشاهده تیکت‌های باز"""
@@ -1028,8 +1164,6 @@ async def open_tickets_command(message: Message):
             await message.answer("✅ **لا توجد تذاكر مفتوحة.**")
         else:
             await message.answer("✅ **No open tickets.**")
-
-# در admin.py این توابع رو اضافه کن (قسمت پایین فایل)
 
 @router.message(F.text.regexp(r'^/confirm_invest_\d+$'))
 async def confirm_investment(message: Message, bot: Bot):
@@ -1199,82 +1333,5 @@ async def reject_investment(message: Message, bot: Bot):
             else:
                 await message.answer("❌ Investment not found.")
             
-    except Exception as e:
-        await message.answer(f"❌ خطا: {str(e)}")
-
-
-# handlers/admin.py - این رو به آخر فایل اضافه کن
-
-@router.message(F.text.in_(["🔧 تعمیر رفرال", "🔧 Fix Referral", "🔧 إصلاح الإحالة"]))
-async def quick_fix_referral(message: Message):
-    """تعمیر سریع دیتابیس رفرال"""
-    if not is_admin(message.from_user.id):
-        return
-    
-    status_msg = await message.answer("🔄 در حال تعمیر دیتابیس رفرال...")
-    
-    try:
-        cursor = db.conn.cursor()
-        
-        # 1. بررسی و اضافه کردن ستون referral_code
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
-            await message.answer("✅ ستون referral_code اضافه شد")
-        except:
-            await message.answer("ℹ️ ستون referral_code از قبل وجود دارد")
-        
-        # 2. بررسی و اضافه کردن ستون referred_by
-        try:
-            cursor.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
-            await message.answer("✅ ستون referred_by اضافه شد")
-        except:
-            pass
-        
-        # 3. ساخت کد رفرال برای همه کاربران
-        cursor.execute("SELECT user_id FROM users")
-        users = cursor.fetchall()
-        
-        import random
-        import string
-        
-        count = 0
-        for user in users:
-            user_id = user[0]
-            # چک کن کد نداره
-            cursor.execute("SELECT referral_code FROM users WHERE user_id = ?", (user_id,))
-            existing = cursor.fetchone()
-            
-            if not existing or not existing[0]:
-                random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-                code = f"RAMO{user_id}{random_part}"
-                cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
-                count += 1
-        
-        db.conn.commit()
-        
-        await message.answer(f"✅ کد رفرال برای {count} کاربر جدید ساخته شد!\n"
-                            f"👥 کل کاربران: {len(users)}")
-        
-        # 4. ساخت جدول referrals اگر نیست
-        try:
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS referrals (
-                    referral_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    referrer_id INTEGER,
-                    referred_id INTEGER,
-                    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    status TEXT DEFAULT 'completed',
-                    reward_amount REAL DEFAULT 0.0,
-                    reward_paid INTEGER DEFAULT 0,
-                    FOREIGN KEY (referrer_id) REFERENCES users (user_id),
-                    FOREIGN KEY (referred_id) REFERENCES users (user_id),
-                    UNIQUE(referred_id)
-                )
-            ''')
-            db.conn.commit()
-            await message.answer("✅ جدول referrals بررسی/ساخته شد")
-        except Exception as e:
-            await message.answer(f"⚠️ خطا در ساخت جدول: {e}")
-        
     except Exception as e:
         await message.answer(f"❌ خطا: {str(e)}")
