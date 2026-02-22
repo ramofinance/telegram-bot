@@ -42,7 +42,7 @@ from handlers.admin import router as admin_router
 from handlers.user_management import router as user_management_router
 from handlers.tickets import router as tickets_router
 from handlers.investment import router as investment_router
-from handlers.referral import router as referral_router  # اضافه شد
+from handlers.referral import router as referral_router
 
 # Load env
 load_dotenv()
@@ -64,7 +64,7 @@ dp.include_router(admin_router)
 dp.include_router(user_management_router)
 dp.include_router(tickets_router)
 dp.include_router(investment_router)
-dp.include_router(referral_router)  # اضافه شد
+dp.include_router(referral_router)
 
 # ایجاد دیتابیس
 db = Database()
@@ -777,7 +777,7 @@ async def find_user_command(message: Message):
 async def handle_profile(message: Message, state: FSMContext):
     await profile_menu(message, state)
 
-# هندلر دعوت از دوستان
+# ✅ هندلر دعوت از دوستان - اینجا اضافه شده
 @dp.message(F.text.in_(["🎁 Invite Friends", "🎁 دعوت از دوستان", "🎁 دعوة الأصدقاء"]))
 async def handle_referral(message: Message, state: FSMContext):
     from handlers.referral import referral_menu
@@ -882,7 +882,7 @@ async def main():
     print(f"🤖 Admins can use /list_users to see all users")
     print(f"🤖 Ticket system is active - users can use Support menu")
     print(f"🤖 Investment system is active - users can invest from $1,000")
-    print(f"🤖 Referral system is active - users can invite friends")  # اضافه شد
+    print(f"🤖 Referral system is active - users can invite friends")
     print(f"🤖 Admin investment commands: /confirm_invest_ID /reject_invest_ID")
     try:
         await dp.start_polling(bot)
