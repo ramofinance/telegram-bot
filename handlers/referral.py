@@ -1,8 +1,7 @@
 # handlers/referral.py
 from aiogram import F, Router, Bot
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from datetime import datetime
 import os
 
@@ -135,6 +134,19 @@ def get_referral_texts(language):
 async def referral_menu(message: Message):
     """منوی اصلی رفرال"""
     user_id = message.from_user.id
+    
+    # اول چک کن کاربر اصلاً ثبت‌نام کرده یا نه
+    user = db.get_user(user_id)
+    if not user or not user[2]:  # user[2] = full_name
+        language = db.get_user_language(user_id) or 'en'
+        if language == 'fa':
+            await message.answer("❌ لطفاً ابتدا ثبت‌نام کنید. /start را بزنید.")
+        elif language == 'ar':
+            await message.answer("❌ الرجاء التسجيل أولاً. أرسل /start")
+        else:
+            await message.answer("❌ Please register first. Send /start")
+        return
+    
     language = db.get_user_language(user_id)
     texts = get_referral_texts(language)
     
@@ -155,6 +167,7 @@ async def show_referral_link(message: Message):
     
     # دریافت کد رفرال
     code = db.get_user_referral_code(user_id)
+    print(f"🔍 User {user_id} has referral code: {code}")
     
     # ساخت لینک
     bot_username = (await message.bot.me()).username
