@@ -42,6 +42,7 @@ from handlers.admin import router as admin_router
 from handlers.user_management import router as user_management_router
 from handlers.tickets import router as tickets_router
 from handlers.investment import router as investment_router
+from handlers.referral import router as referral_router  # اضافه شد
 
 # Load env
 load_dotenv()
@@ -63,6 +64,7 @@ dp.include_router(admin_router)
 dp.include_router(user_management_router)
 dp.include_router(tickets_router)
 dp.include_router(investment_router)
+dp.include_router(referral_router)  # اضافه شد
 
 # ایجاد دیتابیس
 db = Database()
@@ -80,12 +82,29 @@ def language_keyboard():
 
 @dp.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
-    """هندلر شروع"""
+    """هندلر شروع با پشتیبانی از رفرال"""
     user_id = message.from_user.id
+    
+    # بررسی وجود کد رفرال در استارت
+    args = message.text.split()
+    referrer_id = None
+    
+    if len(args) > 1 and args[1].startswith('ref_'):
+        referral_code = args[1][4:]  # حذف 'ref_' از ابتدا
+        referrer_id = db.get_user_by_referral_code(referral_code)
+        
+        # اطمینان از اینکه کاربر خودش رو دعوت نکرده
+        if referrer_id == user_id:
+            referrer_id = None
+    
     user = db.get_user(user_id)
     
     # اگر کاربر ثبت‌نام نکرده (full_name ندارد)
     if user is None or user[2] is None:  # user[2] = full_name
+        # اگر کاربر جدید است و کد رفرال دارد
+        if referrer_id:
+            await state.update_data(referrer_id=referrer_id)
+        
         # نمایش منوی زبان
         await message.answer(
             "🌐 Welcome! Please choose your language:",
@@ -196,9 +215,6 @@ async def language_callback_handler(callback_query: CallbackQuery, state: FSMCon
         await callback_query.message.answer(intro_part2)
         await asyncio.sleep(0.8)
         await callback_query.message.answer(intro_part3)
-    
-    # تنظیم state برای دریافت نام
-    await state.set_state(RegistrationStates.waiting_for_full_name)
     
     # تنظیم state برای دریافت نام
     await state.set_state(RegistrationStates.waiting_for_full_name)
@@ -761,7 +777,11 @@ async def find_user_command(message: Message):
 async def handle_profile(message: Message, state: FSMContext):
     await profile_menu(message, state)
 
-# هندلر سرمایه‌گذاری توسط سیستم جدید در investment.py مدیریت می‌شود
+# هندلر دعوت از دوستان
+@dp.message(F.text.in_(["🎁 Invite Friends", "🎁 دعوت از دوستان", "🎁 دعوة الأصدقاء"]))
+async def handle_referral(message: Message, state: FSMContext):
+    from handlers.referral import referral_menu
+    await referral_menu(message)
 
 @dp.message(F.text.in_(["⚙️ Settings", "⚙️ تنظیمات", "⚙️ الإعدادات"]))
 async def handle_settings(message: Message):
@@ -862,6 +882,7 @@ async def main():
     print(f"🤖 Admins can use /list_users to see all users")
     print(f"🤖 Ticket system is active - users can use Support menu")
     print(f"🤖 Investment system is active - users can invest from $1,000")
+    print(f"🤖 Referral system is active - users can invite friends")  # اضافه شد
     print(f"🤖 Admin investment commands: /confirm_invest_ID /reject_invest_ID")
     try:
         await dp.start_polling(bot)
