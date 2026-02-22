@@ -199,7 +199,7 @@ async def process_phone(message: Message, state: FSMContext):
     await state.set_state(RegistrationStates.waiting_for_wallet)
 
 async def process_wallet(message: Message, state: FSMContext):
-    """دریافت آدرس کیف پول و تکمیل ثبت‌نام"""
+    """دریافت آدرس کیف پول و تکمیل ثبت‌نام با پشتیبانی از رفرال"""
     user_id = message.from_user.id
     language = db.get_user_language(user_id)
     
@@ -239,6 +239,41 @@ async def process_wallet(message: Message, state: FSMContext):
         phone=data.get('phone', 'Not provided'),
         wallet_address=wallet_address
     )
+    
+    # ثبت رفرال اگر وجود داشت
+    referrer_id = data.get('referrer_id')
+    if referrer_id:
+        db.register_referral(referrer_id, user_id)
+        
+        # ارسال نوتیفیکیشن به دعوت‌کننده
+        try:
+            referrer_lang = db.get_user_language(referrer_id)
+            if referrer_lang == 'fa':
+                await message.bot.send_message(
+                    referrer_id,
+                    f"🎉 **تبریک!**\n\n"
+                    f"یک نفر با لینک دعوت شما ثبت‌نام کرد.\n"
+                    f"👤 کاربر: {data.get('full_name', '')}\n"
+                    f"📅 تاریخ: {datetime.now().strftime('%Y-%m-%d')}"
+                )
+            elif referrer_lang == 'ar':
+                await message.bot.send_message(
+                    referrer_id,
+                    f"🎉 **تهانينا!**\n\n"
+                    f"شخص ما سجل عبر رابط دعوتك.\n"
+                    f"👤 المستخدم: {data.get('full_name', '')}\n"
+                    f"📅 التاريخ: {datetime.now().strftime('%Y-%m-%d')}"
+                )
+            else:
+                await message.bot.send_message(
+                    referrer_id,
+                    f"🎉 **Congratulations!**\n\n"
+                    f"Someone registered using your referral link.\n"
+                    f"👤 User: {data.get('full_name', '')}\n"
+                    f"📅 Date: {datetime.now().strftime('%Y-%m-%d')}"
+                )
+        except Exception as e:
+            print(f"❌ Failed to send referral notification: {e}")
     
     # پاک کردن state
     await state.clear()
@@ -293,7 +328,7 @@ async def process_wallet(message: Message, state: FSMContext):
             parse_mode="Markdown"
         )
     
-    # ارسال نوتیفیکیشن به ادمین‌ها - با استفاده از bot از context
+    # ارسال نوتیفیکیشن به ادمین‌ها
     await send_admin_notification(message.bot, user_id, data.get('full_name', ''), 
                                   message.from_user.username, data.get('email', ''), 
                                   data.get('phone', 'Not provided'), wallet_address)
