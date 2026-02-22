@@ -1201,3 +1201,80 @@ async def reject_investment(message: Message, bot: Bot):
             
     except Exception as e:
         await message.answer(f"❌ خطا: {str(e)}")
+
+
+# handlers/admin.py - این رو به آخر فایل اضافه کن
+
+@router.message(F.text.in_(["🔧 تعمیر رفرال", "🔧 Fix Referral", "🔧 إصلاح الإحالة"]))
+async def quick_fix_referral(message: Message):
+    """تعمیر سریع دیتابیس رفرال"""
+    if not is_admin(message.from_user.id):
+        return
+    
+    status_msg = await message.answer("🔄 در حال تعمیر دیتابیس رفرال...")
+    
+    try:
+        cursor = db.conn.cursor()
+        
+        # 1. بررسی و اضافه کردن ستون referral_code
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referral_code TEXT")
+            await message.answer("✅ ستون referral_code اضافه شد")
+        except:
+            await message.answer("ℹ️ ستون referral_code از قبل وجود دارد")
+        
+        # 2. بررسی و اضافه کردن ستون referred_by
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN referred_by INTEGER")
+            await message.answer("✅ ستون referred_by اضافه شد")
+        except:
+            pass
+        
+        # 3. ساخت کد رفرال برای همه کاربران
+        cursor.execute("SELECT user_id FROM users")
+        users = cursor.fetchall()
+        
+        import random
+        import string
+        
+        count = 0
+        for user in users:
+            user_id = user[0]
+            # چک کن کد نداره
+            cursor.execute("SELECT referral_code FROM users WHERE user_id = ?", (user_id,))
+            existing = cursor.fetchone()
+            
+            if not existing or not existing[0]:
+                random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                code = f"RAMO{user_id}{random_part}"
+                cursor.execute("UPDATE users SET referral_code = ? WHERE user_id = ?", (code, user_id))
+                count += 1
+        
+        db.conn.commit()
+        
+        await message.answer(f"✅ کد رفرال برای {count} کاربر جدید ساخته شد!\n"
+                            f"👥 کل کاربران: {len(users)}")
+        
+        # 4. ساخت جدول referrals اگر نیست
+        try:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS referrals (
+                    referral_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    referrer_id INTEGER,
+                    referred_id INTEGER,
+                    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status TEXT DEFAULT 'completed',
+                    reward_amount REAL DEFAULT 0.0,
+                    reward_paid INTEGER DEFAULT 0,
+                    FOREIGN KEY (referrer_id) REFERENCES users (user_id),
+                    FOREIGN KEY (referred_id) REFERENCES users (user_id),
+                    UNIQUE(referred_id)
+                )
+            ''')
+            db.conn.commit()
+            await message.answer("✅ جدول referrals بررسی/ساخته شد")
+        except Exception as e:
+            await message.answer(f"⚠️ خطا در ساخت جدول: {e}")
+        
+    except Exception as e:
+        await message.answer(f"❌ خطا: {str(e)}")
