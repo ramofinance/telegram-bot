@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.strategy import FSMStrategy
 from aiogram.fsm.context import FSMContext
@@ -48,13 +47,8 @@ from handlers.referral import router as referral_router
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-# تنظیم پروکسی
-# PROXY_URL = "http://127.0.0.1:10809"
-# session = AiohttpSession(proxy=PROXY_URL)
-
 # ایجاد bot و dispatcher
 storage = MemoryStorage()
-# bot = Bot(token=BOT_TOKEN, session=session)
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(storage=storage, fsm_strategy=FSMStrategy.USER_IN_CHAT)
 
@@ -91,10 +85,13 @@ async def start_handler(message: Message, state: FSMContext):
     
     if len(args) > 1 and args[1].startswith('ref_'):
         referral_code = args[1][4:]  # حذف 'ref_' از ابتدا
+        print(f"🔍 Referral code detected: {referral_code}")
         referrer_id = db.get_user_by_referral_code(referral_code)
+        print(f"🔍 Referrer ID found: {referrer_id}")
         
         # اطمینان از اینکه کاربر خودش رو دعوت نکرده
         if referrer_id == user_id:
+            print("🔍 User tried to self-refer, ignoring")
             referrer_id = None
     
     user = db.get_user(user_id)
@@ -104,6 +101,7 @@ async def start_handler(message: Message, state: FSMContext):
         # اگر کاربر جدید است و کد رفرال دارد
         if referrer_id:
             await state.update_data(referrer_id=referrer_id)
+            print(f"🔍 Referrer ID saved in state: {referrer_id}")
         
         # نمایش منوی زبان
         await message.answer(
@@ -134,9 +132,15 @@ async def start_handler(message: Message, state: FSMContext):
 
 @dp.callback_query(lambda c: c.data.startswith("lang_"))
 async def language_callback_handler(callback_query: CallbackQuery, state: FSMContext):
-    """هندلر انتخاب زبان - با متن معرفی در 3 پارت"""
+    """هندلر انتخاب زبان - با متن معرفی در 3 پارت و حفظ referrer_id"""
     lang_code = callback_query.data.split("_")[1]
     user_id = callback_query.from_user.id
+    
+    # دریافت داده‌های قبلی state (برای حفظ referrer_id)
+    data = await state.get_data()
+    referrer_id = data.get('referrer_id')
+    if referrer_id:
+        print(f"🔍 Found referrer_id in state: {referrer_id}")
     
     # ذخیره زبان کاربر
     db.add_user(user_id, lang_code)
@@ -216,8 +220,11 @@ async def language_callback_handler(callback_query: CallbackQuery, state: FSMCon
         await asyncio.sleep(0.8)
         await callback_query.message.answer(intro_part3)
     
-    # تنظیم state برای دریافت نام
+    # تنظیم state برای دریافت نام - با حفظ referrer_id
     await state.set_state(RegistrationStates.waiting_for_full_name)
+    if referrer_id:
+        await state.update_data(referrer_id=referrer_id)
+        print(f"🔍 Restored referrer_id in new state: {referrer_id}")
 
 # دستورات مدیریتی
 @dp.message(Command("reset"))
@@ -777,7 +784,6 @@ async def find_user_command(message: Message):
 async def handle_profile(message: Message, state: FSMContext):
     await profile_menu(message, state)
 
-# ✅ هندلر دعوت از دوستان - اینجا اضافه شده
 @dp.message(F.text.in_(["🎁 Invite Friends", "🎁 دعوت از دوستان", "🎁 دعوة الأصدقاء"]))
 async def handle_referral(message: Message, state: FSMContext):
     from handlers.referral import referral_menu
@@ -872,7 +878,7 @@ dp.message.register(edit_phone_finish, ProfileStates.waiting_for_new_phone)
 dp.message.register(edit_wallet_finish, ProfileStates.waiting_for_new_wallet)
 
 async def main():
-#    print(f"🤖 Bot is starting with proxy: {PROXY_URL}")
+    print(f"🤖 Bot is starting...")
     print(f"🤖 Send /reset to clear your data for testing")
     print(f"🤖 Send /myid to get your user ID")
     print(f"🤖 Send /dbinfo to check database structure")
@@ -881,7 +887,7 @@ async def main():
     print(f"🤖 Admins can use /admin command")
     print(f"🤖 Admins can use /list_users to see all users")
     print(f"🤖 Ticket system is active - users can use Support menu")
-    print(f"🤖 Investment system is active - users can invest from $1,000")
+    print(f"🤖 Investment system is active - users can invest from $500")
     print(f"🤖 Referral system is active - users can invite friends")
     print(f"🤖 Admin investment commands: /confirm_invest_ID /reject_invest_ID")
     try:
